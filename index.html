@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Jim's Solar Power Control</title>
+
+<style>
+body{
+    font-family:Arial;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    position:relative;
+}
+
+.main{
+    max-width:600px;
+}
+
+.sysPanel{
+    position:fixed;
+    right:20px;
+    top:20px;
+    width:220px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    background:#f9f9f9;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sysTitle{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.sysItem{
+    margin:8px 0;
+    font-size:13px;
+}
+
+.card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+/* STYLISH HYPERLINK CARD FOR REPORTS */
+.report-card {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    border: none;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.45);
+}
+
+.report-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+.report-link span {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.report-card:hover .report-link span {
+    transform: translateX(5px);
+}
+
+button{
+    padding:12px 18px;
+    margin:5px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.green{color:green;}
+.red{color:red;}
+
+.small{
+    font-size:12px;
+    color:#666;
+}
+
+.video-thumbnails{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.video-thumbnails a{
+    width:180px;
+    text-decoration:none;
+    color:#333;
+    font-size:14px;
+}
+
+.video-thumbnails img{
+    width:180px;
+    height:100px;
+    object-fit:cover;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+
+.video-thumbnails img:hover{
+    transform:scale(1.05);
+    transition:.2s;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Jim's Solar Power Control System --- </h2>
+
+<p id="status">Not logged in</p>
+
+<div class="main">
+
+<div id="loginBox" class="card">
+
+<h3>Login</h3>
+
+<input id="email" type="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+
+<button id="loginBtn">Login</button>
+
+</div>
+
+<div id="dashboard" style="display:none;">
+
+<!-- STYLISH HYPERLINK TO RPT.HTML -->
+<div class="card report-card">
+<a href="rpt.html" class="report-link">
+📊 View Solar Performance Reports & Logs <span>&rarr;</span>
+</a>
+</div>
+
+<div class="card">
+<h3>Failover Mode: Automatic</h3>
+<h4>Failover Trigger: Low Water Tank + City Power Outage </h4>
+</div>
+
+<div class="card">
+<h3>Relay Status</h3>
+<h3>Solar Power Manual Activation</h3>
+<h4></h4>
+
+<button id="onBtn">Start</button>
+<button id="offBtn">Stop</button>
+
+<div id="relayStatus" class="value">--</div>
+</div>
+
+<div class="card">
+<h3>AC Inverter Voltage</h3>
+<div id="acVoltage" class="value">N/A</div>
+</div>
+
+<div class="card">
+<h3>DC Battery Voltage</h3>
+<div id="dcVoltage" class="value">missing</div>
+</div>
+<div class="card">
+<h3>DC Charging Voltage</h3>
+<div id="dcSolarVoltage" class="value">N/A</div>
+</div>
+<div class="card">
+<h3>DC Charging Current</h3>
+<div id="dcSolarCurr" class="value">N/A</div>
+</div>
+
+<div class="card">
+    <h3>Power AI</h3>
+
+    <div id="chatBox" style="height:200px; overflow:auto; border:1px solid #ccc; padding:10px;"></div>
+
+    <input id="chatInput" placeholder="Ask something about this Power system..." style="width:70%;">
+    <button id="sendBtn">Send</button>
+
+</div>
+
+
+<div class="card">
+
+<h3>Video Collections</h3>
+
+<div class="video-thumbnails">
+
+    <a href="https://www.youtube.com/watch?v=08b39qVOWs4"
+       target="_blank"
+       rel="noopener noreferrer">
+
+        <img src="https://img.youtube.com/vi/08b39qVOWs4/maxresdefault.jpg">
+        <p>Solar Power System Overview</p>
+
+    </a>
+
+
+    <a href="https://www.youtube.com/watch?v=r7bZVL0vaQo"
+       target="_blank"
+       rel="noopener noreferrer">
+
+        <img src="https://img.youtube.com/vi/r7bZVL0vaQo/maxresdefault.jpg">
+        <p>Micro Controller</p>
+
+    </a>
+
+
+       <img src="solarpanel.jpg">
+       <p>Solar Panel</p>
+
+    </a>
+
+</div>
+
+<hr>
+
+<button id="logoutBtn">Logout</button>
+
+</div>
+</div>
+
+</div>
+
+<!-- SYSTEM MONITOR -->
+<div class="sysPanel">
+<div class="sysTitle">Controller</div>
+
+<div class="sysItem">
+CPU: <span id="cpuUsage">--</span>
+</div>
+
+<div class="sysItem">
+MEM: <span id="memUsage">--</span>
+</div>
+
+<div class="sysItem">
+UPTIME (sec): <span id="uptime">--</span>
+</div>
+
+</div>
+
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
+    authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
+    databaseURL: "https://solarpowercontrol-21a1c-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "solarpowercontrol-21a1c",
+    storageBucket: "solarpowercontrol-21a1c.firebasestorage.app",
+    messagingSenderId: "836080376430",
+    appId: "1:836080376430:web:12bd6396690a6ff3cde47f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// State variables to maintain conversation history and dynamic identity profiles
+let conversationHistory = [];
+let currentSessionUser = null;
+let pollTimer = null;
+
+document.getElementById("chatInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("sendBtn").click();
+    }
+});
+
+
+let waitingForAI = false;
+
+document.getElementById("sendBtn").addEventListener("click", async () => {
+    const input = document.getElementById("chatInput");
+    const chatBox = document.getElementById("chatBox");
+
+    const userText = input.value.trim();
+    if (!userText) return;
+
+    // Show user message
+    chatBox.innerHTML += `<div><b>You:</b> ${userText}</div>`;
+    input.value = "";
+
+    if (waitingForAI) return;
+
+    waitingForAI = true;
+    document.getElementById("sendBtn").disabled = true;
+
+
+    try {
+        // --- CRITICAL ENHANCEMENT: FETCH REAL-TIME TELEMETRY FOR BACKEND CHAT ---
+        const [
+            snapInverter,
+            snapBatt,
+            snapSolarVolt,
+            snapSolarCur,
+            snapCpu,
+            snapMem
+        ] = await Promise.all([
+            get(ref(db, "invertervolt")),
+            get(ref(db, "battvol")),
+            get(ref(db, "solarvolt")),
+            get(ref(db, "solarcur")),
+            get(ref(db, "cpu")),
+            get(ref(db, "mem"))
+        ]);
+
+        const telemetryPayload = {
+            invertervolt: snapInverter.exists() ? snapInverter.val() : "N/A",
+            battvol: snapBatt.exists() ? snapBatt.val() : "missing",
+            solarvolt: snapSolarVolt.exists() ? snapSolarVolt.val() : "N/A",
+            solarcur: snapSolarCur.exists() ? snapSolarCur.val() : "N/A",
+            cpu: snapCpu.exists() ? snapCpu.val() : "--",
+            mem: snapMem.exists() ? snapMem.val() : "--"
+        };
+
+        const thinking = document.createElement("div");
+        thinking.id = "thinking";
+        thinking.innerHTML = "<b>AI:</b> <i>Thinking...</i>";
+
+        chatBox.appendChild(thinking);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Send prompt paired with chronological conversation turns, name state, and live telemetry data
+        const ai = await askHF(userText, conversationHistory, currentSessionUser, telemetryPayload);
+
+        thinking.remove();
+
+
+        // Show AI reply
+        const aiRow = document.createElement("div");
+
+        const label = document.createElement("b");
+        label.textContent = "AI: ";
+
+        const span = document.createElement("span");
+
+        aiRow.appendChild(label);
+        aiRow.appendChild(span);
+
+        chatBox.appendChild(aiRow);
+
+        await typeWriter(span, ai.reply);
+
+        // Update local session context logs and extracted user profile strings
+        if (ai.userName && ai.userName !== "Unknown User") {
+            currentSessionUser = ai.userName;
+        }
+
+        conversationHistory.push({ role: "user", content: userText });
+        conversationHistory.push({ role: "assistant", content: ai.reply });
+
+        // Maintain array length optimization threshold
+        if (conversationHistory.length > 10) {
+            conversationHistory.splice(0, 2);
+        }
+
+        // Execute control command if detected and confirmed by AI
+        if (ai.intent === "control") {
+            if (ai.command === "relay") {
+                if (ai.argument === "on") {
+                    await set(ref(db, "command_switch"), "0");
+                    console.log("Relay ON command sent.");
+                } else if (ai.argument === "off") {
+                    await set(ref(db, "command_switch"), "1");
+                    console.log("Relay OFF command sent.");
+                }
+            }
+        }
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        waitingForAI = false;
+        document.getElementById("sendBtn").disabled = false;
+
+    } catch (err) {
+        waitingForAI = false;
+        document.getElementById("sendBtn").disabled = false;
+
+        chatBox.innerHTML += `<div><b>AI:</b> Error: ${err.message}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+    }
+});
+
+async function typeWriter(element, text) {
+
+    element.textContent = "";
+
+    let i = 0;
+
+    while (i < text.length) {
+
+        const chunk = Math.floor(Math.random() * 4) + 1;
+
+        element.textContent += text.slice(i, i + chunk);
+
+        i += chunk;
+
+        element.parentElement.parentElement.scrollTop =
+            element.parentElement.parentElement.scrollHeight;
+
+        let delay = 18 + Math.random() * 40;
+
+        // Pause slightly after punctuation
+        if (/[.,!?]/.test(text[i - 1])) {
+            delay += 180;
+        }
+
+        await new Promise(r => setTimeout(r, delay));
+    }
+}
+
+
+async function askHF(prompt, history, userName, telemetry) {
+    const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: prompt,
+            history: history,
+            userName: userName,
+            telemetry: telemetry // Injected live telemetry bundle payload
+        })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+    }
+    return data;
+}
+
+// ---------------- LOGIN ----------------
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch(err) {
+        alert(err.message);
+    }
+});
+
+// ---------------- LOGOUT ----------------
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await signOut(auth);
+});
+
+// ---------------- CONTROL ----------------
+document.getElementById("onBtn").addEventListener("click", async () => {
+    await set(ref(db, "command_switch"), "0");
+});
+
+document.getElementById("offBtn").addEventListener("click", async () => {
+    await set(ref(db, "command_switch"), "1");
+});
+
+// ---------------- TELEMETRY POLLING ----------------
+async function updateData() {
+    try {
+        // Relay Status
+        let snapshot = await get(ref(db, "status_switch"));
+        if (snapshot.exists()) {
+            const v = String(snapshot.val()).trim().toLowerCase();
+            const el = document.getElementById("relayStatus");
+
+            if (v === "relay_on") {
+                el.innerHTML = '<span class="green">RELAY ON</span>';
+            } else if (v === "relay_off") {
+                el.innerHTML = '<span class="red">RELAY OFF</span>';
+            } else {
+                el.innerText = "--";
+            }
+        }
+
+        // AC Voltage
+        snapshot = await get(ref(db, "invertervolt"));
+        document.getElementById("acVoltage").innerText = snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Battery Voltage
+        snapshot = await get(ref(db, "battvol"));
+        document.getElementById("dcVoltage").innerText = snapshot.exists() ? snapshot.val() : "err";
+
+        // DC Charging Voltage
+        snapshot = await get(ref(db, "solarvolt"));
+        document.getElementById("dcSolarVoltage").innerText = snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Charging Current
+        snapshot = await get(ref(db, "solarcur"));
+        document.getElementById("dcSolarCurr").innerText = snapshot.exists() ? snapshot.val() : "N/A";
+
+        // CPU
+        snapshot = await get(ref(db, "cpu"));
+        document.getElementById("cpuUsage").innerText = snapshot.exists() ? snapshot.val() : "--";
+
+        // Memory
+        snapshot = await get(ref(db, "mem"));
+        document.getElementById("memUsage").innerText = snapshot.exists() ? snapshot.val() : "--";
+
+        // Uptime
+        snapshot = await get(ref(db, "uptime"));
+        document.getElementById("uptime").innerText = snapshot.exists() ? snapshot.val() : "--";
+
+    } catch (err) {
+        console.error("Polling Error:", err);
+    }
+}
+
+// ---------------- AUTH STATE LISTENER ----------------
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById("status").innerText = "Logged in: " + user.email;
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+
+        updateData();
+
+        if (!pollTimer) {
+            pollTimer = setInterval(updateData, 2000);
+        }
+    } else {
+        document.getElementById("status").innerText = "Not logged in";
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("dashboard").style.display = "none";
+
+        // Flush application session states on logout
+        conversationHistory = [];
+        currentSessionUser = null;
+
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+});
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        console.log("HF token present:", !!process.env.HF_TOKEN);
+
+        const { message } = req.body;
+
+        const hfResponse = await fetch(
+            "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    messages: [
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: false
+                })
+            }
+        );
+
+        const text = await hfResponse.text();
+
+        console.log("HF Status:", hfResponse.status);
+        console.log("HF Body:", text);
+	console.log("Returning reply:", data?.choices?.[0]?.message?.content);
+        return res
+            .status(hfResponse.status)
+            .setHeader("Content-Type", "application/json")
+            .send(text);
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+}

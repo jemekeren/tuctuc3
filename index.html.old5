@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Jim's Solar Power Control 1</title>
+
+<style>
+body{
+    font-family:Arial;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    position:relative;
+}
+
+.main{
+    max-width:600px;
+}
+
+.sysPanel{
+    position:fixed;
+    right:20px;
+    top:20px;
+    width:220px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    background:#f9f9f9;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sysTitle{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.sysItem{
+    margin:8px 0;
+    font-size:13px;
+}
+
+.card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+/* STYLISH HYPERLINK CARD FOR REPORTS */
+.report-card {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    border: none;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.45);
+}
+
+.report-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+.report-link span {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.report-card:hover .report-link span {
+    transform: translateX(5px);
+}
+
+button{
+    padding:12px 18px;
+    margin:5px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.green{color:green;}
+.red{color:red;}
+
+.small{
+    font-size:12px;
+    color:#666;
+}
+
+#chatBox{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:12px;
+    background:#ffffff;
+}
+
+.msg{
+    max-width:80%;
+    padding:12px 16px;
+    border-radius:18px;
+    line-height:1.5;
+    word-wrap:break-word;
+}
+
+.user{
+    align-self:flex-end;
+    background:#10a37f;
+    color:white;
+    border-bottom-right-radius:5px;
+}
+
+.ai{
+    align-self:flex-start;
+    background:white;
+    border:1px solid #ddd;
+    border-bottom-left-radius:5px;
+}
+
+.error{
+    color:#b00020;
+}
+
+.thinking{
+    color:#666;
+    font-style:italic;
+}
+
+.dots span{
+    animation: blink 1.4s infinite;
+}
+
+.dots span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.dots span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes blink{
+    0%,20%{
+        opacity:0;
+    }
+    50%{
+        opacity:1;
+    }
+    100%{
+        opacity:0;
+    }
+}
+
+
+</style>
+</head>
+
+<body>
+
+<h2>Jim's Solar Power Control System 3 </h2>
+
+<p id="status">Not logged in</p>
+
+<div class="main">
+
+<div id="loginBox" class="card">
+
+<h3>Login</h3>
+
+<input id="email" type="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+
+<button id="loginBtn">Login</button>
+
+</div>
+
+<div id="dashboard" style="display:none;">
+
+<!-- STYLISH HYPERLINK TO RPT.HTML -->
+<div class="card report-card">
+<a href="rpt.html" class="report-link">
+📊 View Solar Performance Reports & Logs <span>&rarr;</span>
+</a>
+</div>
+
+<div class="card">
+<h3>Failover Mode: Automatic</h3>
+<h4>Failover Trigger: Low Water Tank + City Power Outage </h4>
+</div>
+
+<div class="card">
+<h3>Relay Status</h3>
+<h3>Solar Power Manual Activation</h3>
+<h4></h4>
+
+<button id="onBtn">Start</button>
+<button id="offBtn">Stop</button>
+
+<div id="relayStatus" class="value">--</div>
+</div>
+
+<div class="card">
+<h3>AC Inverter Voltage</h3>
+<div id="acVoltage" class="value">N/A</div>
+</div>
+
+<div class="card">
+<h3>DC Battery Voltage</h3>
+<div id="dcVoltage" class="value">missing</div>
+</div>
+<div class="card">
+<h3>DC Charging Voltage</h3>
+<div id="dcSolarVoltage" class="value">N/A</div>
+</div>
+<div class="card">
+<h3>DC Charging Current</h3>
+<div id="dcSolarCurr" class="value">N/A</div>
+</div>
+
+<div class="card">
+    <h3>Ask me</h3>
+
+    <div id="chatBox" style="height:200px; overflow:auto; border:1px solid #000; padding:10px;"></div>
+
+    <input id="chatInput" placeholder="Ask something about this Power system..." style="width:70%;">
+    <button id="sendBtn">Send</button>
+    
+</div>
+
+<div class="card">
+<button id="logoutBtn">Logout</button>
+</div>
+
+</div>
+
+</div>
+
+<!-- SYSTEM MONITOR -->
+<div class="sysPanel">
+<div class="sysTitle">Controller</div>
+
+<div class="sysItem">
+CPU: <span id="cpuUsage">--</span>
+</div>
+
+<div class="sysItem">
+MEM: <span id="memUsage">--</span>
+</div>
+
+<div class="sysItem">
+UPTIME (sec): <span id="uptime">--</span>
+</div>
+
+</div>
+
+<script type="module">
+    
+
+document.getElementById("sendBtn").addEventListener("click", async () => {
+
+    const input = document.getElementById("chatInput");
+    const chatBox = document.getElementById("chatBox");
+
+    const userText = input.value.trim();
+    if (!userText) return;
+
+    // User message
+    chatBox.innerHTML += `
+        <div class="msg user">
+            ${userText}
+        </div>
+    `;
+
+    input.value = "";
+
+    // AI thinking bubble
+    chatBox.innerHTML += `
+        <div class="msg ai thinking" id="thinkingMsg">
+            <span class="dots">
+                Thinking<span>.</span><span>.</span><span>.</span>
+            </span>
+        </div>
+    `;
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+
+        const ai = await askHF(userText);
+
+        // Replace thinking bubble
+        document.getElementById("thinkingMsg").outerHTML = `
+            <div class="msg ai">
+                ${ai.reply}
+            </div>
+        `;
+
+        // Execute command
+        if (ai.intent === "control") {
+
+            if (ai.command === "relay") {
+
+                if (ai.argument === "on") {
+                    await set(ref(db, "command_switch"), "0");
+                }
+
+                else if (ai.argument === "off") {
+                    await set(ref(db, "command_switch"), "1");
+                }
+
+            }
+
+        }
+
+    }
+    catch(err){
+
+        document.getElementById("thinkingMsg").outerHTML = `
+            <div class="msg ai error">
+                Error: ${err.message}
+            </div>
+        `;
+
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+});
+
+
+
+
+async function askHF(prompt) {
+    const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: prompt })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+    }
+
+    return data;
+}
+
+    
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+
+
+import {
+getAuth,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+} 
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+import {
+getDatabase,
+ref,
+set,
+get
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
+authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
+databaseURL: "https://solarpowercontrol-21a1c-default-rtdb.asia-southeast1.firebasedatabase.app/",
+projectId: "solarpowercontrol-21a1c",
+storageBucket: "solarpowercontrol-21a1c.firebasestorage.app",
+messagingSenderId: "836080376430",
+appId: "1:836080376430:web:12bd6396690a6ff3cde47f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+
+// ---------------- LOGIN ----------------
+
+document.getElementById("loginBtn")
+.addEventListener("click", async () => {
+
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+
+try {
+await signInWithEmailAndPassword(auth, email, password);
+} catch(err) {
+alert(err.message);
+}
+
+});
+
+// ---------------- LOGOUT ----------------
+
+document.getElementById("logoutBtn")
+.addEventListener("click", async () => {
+await signOut(auth);
+});
+
+// ---------------- CONTROL ----------------
+
+document.getElementById("onBtn")
+.addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "0");
+});
+
+document.getElementById("offBtn")
+.addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "1");
+});
+
+// ---------------- AUTH ----------------
+
+onAuthStateChanged(auth,(user)=>{
+
+if(user){
+
+console.log(user);
+
+  user.getIdToken().then((token) => {
+            console.log("ID Token:", token);
+        });
+
+document.getElementById("status").innerText =
+"Logged in: " + user.email;
+
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").style.display="block";
+}
+else{
+document.getElementById("status").innerText="Not logged in";
+
+document.getElementById("loginBox").style.display="block";
+document.getElementById("dashboard").style.display="none";
+}
+
+});
+
+
+// ---------------- RELAY STATUS ----------------
+// ---------------- POLLING ----------------
+
+async function updateData() {
+
+    try {
+
+        // Relay Status
+        let snapshot = await get(ref(db, "status_switch"));
+
+        if (snapshot.exists()) {
+
+            const v = String(snapshot.val()).trim().toLowerCase();
+            const el = document.getElementById("relayStatus");
+
+            if (v === "relay_on") {
+                el.innerHTML = '<span class="green">RELAY ON</span>';
+            }
+            else if (v === "relay_off") {
+                el.innerHTML = '<span class="red">RELAY OFF</span>';
+            }
+            else {
+                el.innerText = "--";
+            }
+        }
+
+        // AC Voltage
+        snapshot = await get(ref(db, "invertervolt"));
+        document.getElementById("acVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Battery Voltage
+        snapshot = await get(ref(db, "battvol"));
+        document.getElementById("dcVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "err";
+
+        // DC Charging Voltage
+        snapshot = await get(ref(db, "solarvolt"));
+        document.getElementById("dcSolarVoltage").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // DC Charging Current
+        snapshot = await get(ref(db, "solarcur"));
+        document.getElementById("dcSolarCurr").innerText =
+            snapshot.exists() ? snapshot.val() : "N/A";
+
+        // CPU
+        snapshot = await get(ref(db, "cpu"));
+        document.getElementById("cpuUsage").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+        // Memory
+        snapshot = await get(ref(db, "mem"));
+        document.getElementById("memUsage").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+        // Uptime
+        snapshot = await get(ref(db, "uptime"));
+        document.getElementById("uptime").innerText =
+            snapshot.exists() ? snapshot.val() : "--";
+
+    }
+    catch (err) {
+        console.error("Polling Error:", err);
+    }
+}
+
+// Start polling after login
+let pollTimer = null;
+
+onAuthStateChanged(auth, (user) => {
+
+    if (user) {
+
+        document.getElementById("status").innerText =
+            "Logged in: " + user.email;
+
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+
+        updateData();
+
+        if (!pollTimer) {
+            pollTimer = setInterval(updateData, 2000);
+        }
+
+    } else {
+
+        document.getElementById("status").innerText = "Not logged in";
+
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("dashboard").style.display = "none";
+
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        const { message } = req.body;
+
+        const response = await fetch(
+            "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    temperature: 0,
+
+                    messages: [
+                        {
+                            role: "system",
+                            content: `
+You are a Solar System Controller AI.
+
+You MUST follow these rules:
+- Return ONLY valid JSON.
+- No explanations, no markdown, no text outside JSON.
+Allowed actions:
+1. relay_control (ON or OFF)
+2. status_request (battery, voltage, current)
+3. explain_issue (current_high, voltage_low)
+
+Format:
+{"action":"...","value":"..."}
+`
+                        },
+                        {
+                            role: "system",
+                            content: `
+System Context:
+
+This is Jim's Solar Power Control system (custom DIY project).
+
+Hardware:
+- 100Ah LiFePO4 battery (4 cells, ~12V)
+- 40WP mono solar panel
+- Custom 1A MPPT Solar charger
+- Active solar balancer 4S (1A)
+- RC Type - LCD Battery Individual Cell Voltage Monitor with Buzzer
+- Self Timer based capped at 10Mins Kill-Switch when Tank never  refilling to avoid Battery Exhaustion.
+- Time Delay to Warm up  Inverter (Cisco HRSP Concept)
+- Automatic Transfer Switch 
+- Solenoid relay + Siemens contactor
+- DC MCCB 100A
+- 2A DC  Fuse
+- 80A Audio Breaker
+- 6A AC MCB For  Water Pump Short Circuit Protection
+- Water tank with float sensor
+- Automatic failover during city blackout
+- And many more not covered...
+
+Important:
+If asked about the system, explain it is Jim's custom DIY solar power system and suggest contacting Jimmy for more details.
+`
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: false
+                })
+        );
+
+        const data = await response.json();
+
+        const content = data?.choices?.[0]?.message?.content || "{}";
+
+        // try parse strict JSON
+        try {
+            const parsed = JSON.parse(content);
+            return res.status(200).json(parsed);
+        } catch (e) {
+            return res.status(200).json({
+                action: "info",
+                value: content
+            });
+        }
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+}

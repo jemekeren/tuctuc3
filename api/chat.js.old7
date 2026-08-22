@@ -1,0 +1,85 @@
+module.exports = async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        const { message } = req.body;
+
+        const response = await fetch(
+            "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    temperature: 0,
+
+                    messages: [
+                        {
+                            role: "system",
+                            content: `
+You are a Solar System Controller AI.
+
+Return ONLY valid JSON.
+
+Allowed actions:
+1. relay_control (ON or OFF)
+2. status_request (battery, voltage, current)
+3. explain_issue (current_high, voltage_low)
+
+Format:
+{"action":"...","value":"..."}
+`
+                        },
+                        {
+                            role: "system",
+                            content: `
+System Context:
+
+This is Jim's Solar Power Control system (custom DIY project).
+
+Hardware:
+- 100Ah LiFePO4 battery (4 cells, ~12V)
+- 40W mono solar panel
+- Custom 1A MPPT charger
+- Active solar balancer
+- Solenoid relay + Siemens contactor
+- Water tank with float sensor
+- Automatic failover during city blackout
+
+If asked, describe it as Jim's DIY solar system and refer to Jimmy for details.
+`
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: false
+                })
+        );
+
+        const data = await response.json();
+
+        const content = data?.choices?.[0]?.message?.content || "{}";
+
+        try {
+            const parsed = JSON.parse(content);
+            return res.status(200).json(parsed);
+        } catch (e) {
+            return res.status(200).json({
+                action: "info",
+                value: content
+            });
+        }
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+};

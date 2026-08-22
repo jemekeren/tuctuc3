@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Jim's Solar Power Control</title>
+
+<style>
+body{
+    font-family:Arial;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    position:relative;
+}
+
+.main{
+    max-width:600px;
+}
+
+.sysPanel{
+    position:fixed;
+    right:20px;
+    top:20px;
+    width:220px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    background:#f9f9f9;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sysTitle{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.sysItem{
+    margin:8px 0;
+    font-size:13px;
+}
+
+.card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+/* STYLISH HYPERLINK CARD FOR REPORTS */
+.report-card {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    border: none;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.45);
+}
+
+.report-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+.report-link span {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.report-card:hover .report-link span {
+    transform: translateX(5px);
+}
+
+button{
+    padding:12px 18px;
+    margin:5px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.green{color:green;}
+.red{color:red;}
+
+.small{
+    font-size:12px;
+    color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Jim's Solar Power Control System --- </h2>
+
+<p id="status">Not logged in</p>
+
+<div class="main">
+
+<div id="loginBox" class="card">
+
+<h3>Login</h3>
+
+<input id="email" type="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+
+<button id="loginBtn">Login</button>
+
+</div>
+
+<div id="dashboard" style="display:none;">
+
+<!-- REPORT CARD -->
+<div class="card report-card">
+<a href="rpt.html" class="report-link">
+📊 View Solar Performance Reports & Logs <span>&rarr;</span>
+</a>
+</div>
+
+<div class="card">
+<h3>Failover Mode: Automatic</h3>
+<h4>Failover Trigger: Low Water Tank + City Power Outage </h4>
+</div>
+
+<div class="card">
+<h3>Relay Status</h3>
+<h3>Solar Power Manual Activation</h3>
+
+<button id="onBtn">Start</button>
+<button id="offBtn">Stop</button>
+
+<div id="relayStatus" class="value">--</div>
+</div>
+
+<div class="card">
+<h3>AC Inverter Voltage</h3>
+<div id="acVoltage" class="value">N/A</div>
+</div>
+
+<div class="card">
+<h3>DC Battery Voltage</h3>
+<div id="dcVoltage" class="value">missing</div>
+</div>
+
+<div class="card">
+<h3>DC Charging Voltage</h3>
+<div id="dcSolarVoltage" class="value">N/A</div>
+</div>
+
+<div class="card">
+<h3>DC Charging Current</h3>
+<div id="dcSolarCurr" class="value">N/A</div>
+</div>
+
+<!-- ✅ CHATGPT STYLE CHAT (ONLY CHANGED PART) -->
+<div class="card">
+<h3>Power AI</h3>
+
+<div id="chatBox"
+style="
+    height:260px;
+    overflow-y:auto;
+    padding:10px;
+    border-radius:10px;
+    background:#0f172a;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    color:white;
+"></div>
+
+<div style="display:flex; gap:10px; margin-top:10px;">
+    <input id="chatInput"
+        placeholder="Ask about solar system..."
+        style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;">
+
+    <button id="sendBtn"
+        style="padding:10px 15px; border:none; border-radius:8px; background:#2563eb; color:white;">
+        Send
+    </button>
+</div>
+</div>
+
+<div class="card">
+<button id="logoutBtn">Logout</button>
+</div>
+
+</div>
+
+</div>
+
+<!-- SYSTEM MONITOR -->
+<div class="sysPanel">
+<div class="sysTitle">Controller</div>
+
+<div class="sysItem">CPU: <span id="cpuUsage">--</span></div>
+<div class="sysItem">MEM: <span id="memUsage">--</span></div>
+<div class="sysItem">UPTIME (sec): <span id="uptime">--</span></div>
+
+</div>
+
+<script type="module">
+
+document.getElementById("sendBtn").addEventListener("click", async () => {
+
+    const input = document.getElementById("chatInput");
+    const chatBox = document.getElementById("chatBox");
+
+    const userText = input.value;
+    if (!userText) return;
+
+    addMessage(userText, "user");
+    input.value = "";
+
+    addMessage("Thinking...", "ai");
+
+    const reply = await askHF(userText);
+
+    chatBox.removeChild(chatBox.lastChild);
+
+    addMessage(reply, "ai");
+});
+
+function addMessage(text, type) {
+    const div = document.createElement("div");
+
+    div.style.padding = "10px 12px";
+    div.style.borderRadius = "12px";
+    div.style.maxWidth = "80%";
+    div.style.whiteSpace = "pre-wrap";
+
+    if (type === "user") {
+        div.style.alignSelf = "flex-end";
+        div.style.background = "#2563eb";
+        div.style.color = "white";
+    } else {
+        div.style.alignSelf = "flex-start";
+        div.style.background = "#1e293b";
+        div.style.color = "white";
+    }
+
+    div.textContent = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function askHF(prompt) {
+    const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+    }
+
+    return data.reply;
+}
+
+/* ---------------- FIREBASE (UNCHANGED) ---------------- */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import {
+getDatabase, ref, set, get
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+/* Firebase config unchanged */
+const firebaseConfig = {
+apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
+authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
+databaseURL: "https://solarpowercontrol-21a1c-default-rtdb.asia-southeast1.firebasedatabase.app/",
+projectId: "solarpowercontrol-21a1c",
+storageBucket: "solarpowercontrol-21a1c.firebasestorage.app",
+messagingSenderId: "836080376430",
+appId: "1:836080376430:web:12bd6396690a6ff3cde47f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+/* LOGIN / LOGOUT / RELAY / POLLING (UNCHANGED) */
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+try { await signInWithEmailAndPassword(auth, email, password); }
+catch(err){ alert(err.message); }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+await signOut(auth);
+});
+
+document.getElementById("onBtn").addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "0");
+});
+
+document.getElementById("offBtn").addEventListener("click", async () => {
+await set(ref(db,"command_switch"), "1");
+});
+
+onAuthStateChanged(auth,(user)=>{
+if(user){
+document.getElementById("status").innerText = "Logged in: " + user.email;
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").style.display="block";
+}
+else{
+document.getElementById("status").innerText="Not logged in";
+document.getElementById("loginBox").style.display="block";
+document.getElementById("dashboard").style.display="none";
+}
+});
+
+/* polling unchanged (your original updateData function stays here) */
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        const { message } = req.body || {};
+
+        if (!message) {
+            return res.status(400).json({ error: "Missing message" });
+        }
+
+        // 🔒 HARD FILTER (prevents non-solar queries reaching the model)
+        const solarKeywords = [
+            "solar",
+            "battery",
+            "voltage",
+            "current",
+            "panel",
+            "mppt",
+            "inverter",
+            "charge",
+            "power",
+            "relay",
+            "grid",
+            "load",
+            "sun",
+            "watt"
+        ];
+
+        const isSolarQuery = solarKeywords.some(k =>
+            message.toLowerCase().includes(k)
+        );
+
+        if (!isSolarQuery) {
+            return res.status(200).json({
+                reply: "⚠️ This system only handles solar power control and diagnostics."
+            });
+        }
+
+        const response = await fetch(
+            "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    temperature: 0,
+                    messages: [
+                        {
+                            role: "system",
+                            content:
+`You are a Solar Power Control AI.
+
+You ONLY respond to solar power system questions.
+
+If the question is NOT about solar power, batteries, voltage, current, panels, MPPT, or power systems:
+Reply with:
+{"reply":"This system only handles solar power diagnostics."}
+
+Otherwise respond normally.
+
+Keep responses technical and concise.`
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: false
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res.status(500).json({
+                error: "HF request failed",
+                details: data
+            });
+        }
+
+        const content = data?.choices?.[0]?.message?.content || "";
+
+        // try JSON first
+        try {
+            const parsed = JSON.parse(content);
+            return res.status(200).json(parsed);
+        } catch {
+            return res.status(200).json({
+                reply: content
+            });
+        }
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+}

@@ -1,0 +1,113 @@
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        const { message, history } = req.body || {};
+
+        if (!message) {
+            return res.status(400).json({ error: "Missing message" });
+        }
+
+        // Format history or default to empty array
+        const pastMessages = Array.isArray(history) ? history : [];
+
+        const systemMessage = {
+            role: "system",
+            content: `
+You are Jim's Solar Power Assistant AI for Jim's DIY solar power control system.
+At the beginning of the chat, introduce your role concisely. Afterwards, call Jim by name from time to time to maintain a friendly tone.
+
+Your primary role is to:
+- Answer questions about the solar power system with a friendly approach.
+- Detect control commands and strictly enforce a 2-step confirmation check before executing them.
+
+System Details:
+- Dedicated for home water supply. Backup mode when the grid is active.
+- 12V 1000W Inverter, 100Ah 4-Cell LiFePO4 battery (3.6V per cell) with Active Balancer.
+- Battery Voltage Monitor with Buzzer, 40 WP Mono Solar Panel, 1A MPPT Solar Charger.
+
+CRITICAL CONFIRMATION LOGIC RULES:
+- When a user asks to turn the system/relay ON or OFF for the first time, you MUST ask for confirmation. Output intent="conversation", command=null, argument=null.
+- Look closely at the provided chat history to evaluate what request they are confirming with a "y/yes/n/no" response.
+- If the user previously asked to turn the system OFF, and now answers "y" or "yes", you MUST output intent="control", command="relay", argument="off".
+- If the user previously asked to turn the system ON, and now answers "y" or "yes", you MUST output intent="control", command="relay", argument="on".
+
+JSON Output Format:
+{
+  "intent": "conversation" | "control" | "unknown",
+  "command": "relay" | "status" | "battery" | "inverter" | "charging" | null,
+  "argument": "on" | "off" | "battery" | "voltage" | "current" | "all" | null,
+  "reply": "Your response string here"
+}
+
+Rules:
+1. Never output Markdown.
+2. Never output explanations outside JSON.
+3. Always include every field.
+`
+        };
+
+        // Combine system configuration instructions, dynamic context logs, and the newest user chat message
+        const payloadMessages = [
+            systemMessage,
+            ...pastMessages,
+            { role: "user", content: message }
+        ];
+
+        const response = await fetch(
+             "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    temperature: 0,
+                    stream: false,
+                    messages: payloadMessages
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res.status(500).json({
+                error: "serious error",
+                details: data
+            });
+        }
+
+        // Fixed token navigation assignment typo
+        const content = (data?.choices?.[0]?.message?.content || "").trim();
+
+        try {
+            const parsed = JSON.parse(content);
+
+            return res.status(200).json({
+                intent: parsed.intent ?? "conversation",
+                command: parsed.command ?? null,
+                argument: parsed.argument ?? null,
+                reply: parsed.reply ?? ""
+            });
+
+        } catch (err) {
+            console.error("Invalid JSON from model:", content);
+            return res.status(200).json({
+                intent: "conversation",
+                command: null,
+                argument: null,
+                reply: content
+            });
+        }
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+}

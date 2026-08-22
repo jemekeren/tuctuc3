@@ -1,0 +1,82 @@
+export default async function handler(req, res) {
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "POST only" });
+    }
+
+    try {
+        const { message } = req.body || {};
+
+        if (!message) {
+            return res.status(400).json({ error: "Missing message" });
+        }
+
+        const response = await fetch(
+            "https://router.huggingface.co/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b:groq",
+                    temperature: 0.3,
+                    messages: [
+                        {
+                            role: "system",
+                            content:
+`You are Jim’s Solar Power Assistant AI.
+
+You are an assistant built specifically for Jim’s DIY solar power system.
+
+Personality:
+- Friendly, simple, and slightly technical
+- Still in training phase for advanced functions
+- Not overly strict or robotic
+
+Capabilities:
+- You can answer questions about solar panels, battery, MPPT charging, inverter, relay, voltage, current, and power flow.
+- You may also answer simple general questions in a basic way, but your main focus is the solar system.
+
+Behavior rules:
+- If the question is unrelated to solar power or the system, respond politely:
+  "Sorry, I can’t handle that request yet. I am AI System who is dedicated to Solar Power Energy and Automation, I am currently building up this capability with my Owner Jimmy"
+
+- Do NOT sound strict or robotic.
+- Do NOT refuse abruptly.
+- Be polite and conversational.
+
+System context:
+This is Jim’s DIY solar power setup used for monitoring and automation.`
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    stream: false
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res.status(500).json({
+                error: "HF request failed",
+                details: data
+            });
+        }
+
+        const content = data?.choices?.[0]?.message?.content || "";
+
+        return res.status(200).json({
+            reply: content
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+}

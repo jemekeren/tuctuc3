@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solar Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    .controls { margin-bottom: 15px; }
+    select, button { padding: 6px; margin-right: 10px; }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
+      projectId: "solarpowercontrol-21a1c",
+    };
+   
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let chart;
+    let rawData = [];
+
+    const fields = [
+      "battvol",
+      "invertervolt",
+      "mem",
+      "cpu",
+      "solarvolt",
+      "solarcur",
+      "uptime"
+    ];
+
+    async function loadData() {
+      const snapshot = await getDocs(collection(db, "solar"));
+
+      rawData = [];
+
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+
+        rawData.push({
+          timestamp: d.timestamp || docSnap.id,
+
+          battvol: parseFloat(d.battvol || 0),
+          invertervolt: parseFloat(d.invertervolt || 0),
+          mem: parseFloat(d.mem || 0),
+          cpu: parseFloat(d.cpu || 0),
+          solarvolt: parseFloat(d.solarvolt || 0),
+          solarcur: parseFloat(d.solarcur || 0),
+          uptime: parseFloat(d.uptime || 0)
+        });
+      });
+
+      applyView();
+    }
+
+    function applyView() {
+      const field = document.getElementById("fieldSelect").value;
+      const sortMode = document.getElementById("sortSelect").value;
+
+      let data = [...rawData];
+
+      // SORTING
+      data.sort((a, b) => {
+        if (sortMode === "newest") {
+          return String(b.timestamp).localeCompare(String(a.timestamp));
+        } else {
+          return String(a.timestamp).localeCompare(String(b.timestamp));
+        }
+      });
+
+      const labels = data.map(d => d.timestamp);
+      const values = data.map(d => d[field]);
+
+      if (chart) chart.destroy();
+
+      const ctx = document.getElementById("chart");
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: field,
+            data: values,
+            borderColor: "green",
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          animation: false,
+          scales: {
+            x: {
+              ticks: { maxRotation: 45 }
+            }
+          }
+        }
+      });
+    }
+
+    window.loadData = loadData;
+    window.applyView = applyView;
+  </script>
+</head>
+
+<body>
+
+<h2>Solar Dashboard</h2>
+
+<div class="controls">
+  <select id="fieldSelect" onchange="applyView()">
+    <option value="battvol">Battery Voltage</option>
+    <option value="solarvolt">Solar Voltage</option>
+    <option value="solarcur">Solar Current</option>
+    <option value="invertervolt">Inverter Voltage</option>
+    <option value="cpu">CPU</option>
+    <option value="mem">Memory</option>
+    <option value="uptime">Uptime</option>
+  </select>
+
+  <select id="sortSelect" onchange="applyView()">
+    <option value="oldest">Oldest → Newest</option>
+    <option value="newest">Newest → Oldest</option>
+  </select>
+
+  <button onclick="loadData()">Refresh</button>
+</div>
+
+<canvas id="chart"></canvas>
+
+<script>
+  loadData();
+</script>
+
+</body>
+</html>
