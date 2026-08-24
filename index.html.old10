@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Jim's Solar Power Control</title>
+<title>non GH Integrated - Jim's Solar Power Control</title>
 
 <style>
 body{
@@ -106,12 +106,39 @@ input{
     font-size:12px;
     color:#666;
 }
+
+.video-thumbnails{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.video-thumbnails a{
+    width:180px;
+    text-decoration:none;
+    color:#333;
+    font-size:14px;
+}
+
+.video-thumbnails img{
+    width:180px;
+    height:100px;
+    object-fit:cover;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+
+.video-thumbnails img:hover{
+    transform:scale(1.05);
+    transition:.2s;
+}
+
 </style>
 </head>
 
 <body>
 
-<h2>Jim's Solar Power Control System --- </h2>
+<h2>non GH2 Integrated - Jim's Solar Power Control System --- </h2>
 
 <p id="status">Not logged in</p>
 
@@ -181,10 +208,45 @@ input{
 
 </div>
 
+
 <div class="card">
-<button id="logoutBtn">Logout</button>
+
+<h3>Video Collections</h3>
+
+<div class="video-thumbnails">
+
+    <a href="https://www.youtube.com/watch?v=08b39qVOWs4"
+       target="_blank"
+       rel="noopener noreferrer">
+
+        <img src="https://img.youtube.com/vi/08b39qVOWs4/maxresdefault.jpg">
+        <p>Solar Power System Overview</p>
+
+    </a>
+
+
+    <a href="https://www.youtube.com/watch?v=r7bZVL0vaQo"
+       target="_blank"
+       rel="noopener noreferrer">
+
+        <img src="https://img.youtube.com/vi/r7bZVL0vaQo/maxresdefault.jpg">
+        <p>Micro Controller</p>
+
+    </a>
+
+
+       <img src="solarpanel.jpg">
+       <p>Solar Panel</p>
+
+    </a>
+
 </div>
 
+<hr>
+
+<button id="logoutBtn">Logout</button>
+
+</div>
 </div>
 
 </div>
@@ -206,6 +268,8 @@ UPTIME (sec): <span id="uptime">--</span>
 </div>
 
 </div>
+
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -251,7 +315,7 @@ document.getElementById("sendBtn").addEventListener("click", async () => {
     // Show user message
     chatBox.innerHTML += `<div><b>You:</b> ${userText}</div>`;
     input.value = "";
-	
+
     if (waitingForAI) return;
 
     waitingForAI = true;
@@ -285,33 +349,33 @@ document.getElementById("sendBtn").addEventListener("click", async () => {
             mem: snapMem.exists() ? snapMem.val() : "--"
         };
 
-	const thinking = document.createElement("div");
-	thinking.id = "thinking";
-	thinking.innerHTML = "<b>AI:</b> <i>Thinking...</i>";
+        const thinking = document.createElement("div");
+        thinking.id = "thinking";
+        thinking.innerHTML = "<b>AI:</b> <i>Thinking...</i>";
 
-	chatBox.appendChild(thinking);
-	chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.appendChild(thinking);
+        chatBox.scrollTop = chatBox.scrollHeight;
 
         // Send prompt paired with chronological conversation turns, name state, and live telemetry data
         const ai = await askHF(userText, conversationHistory, currentSessionUser, telemetryPayload);
 
-	thinking.remove();
+        thinking.remove();
 
 
         // Show AI reply
         const aiRow = document.createElement("div");
 
-	const label = document.createElement("b");
-	label.textContent = "AI: ";
+        const label = document.createElement("b");
+        label.textContent = "AI: ";
 
-	const span = document.createElement("span");
+        const span = document.createElement("span");
 
-	aiRow.appendChild(label);
-	aiRow.appendChild(span);
+        aiRow.appendChild(label);
+        aiRow.appendChild(span);
 
-	chatBox.appendChild(aiRow);
+        chatBox.appendChild(aiRow);
 
-	await typeWriter(span, ai.reply);
+        await typeWriter(span, ai.reply);
 
         // Update local session context logs and extracted user profile strings
         if (ai.userName && ai.userName !== "Unknown User") {
@@ -341,16 +405,16 @@ document.getElementById("sendBtn").addEventListener("click", async () => {
 
         chatBox.scrollTop = chatBox.scrollHeight;
 
-	waitingForAI = false;
-	document.getElementById("sendBtn").disabled = false;
+        waitingForAI = false;
+        document.getElementById("sendBtn").disabled = false;
 
     } catch (err) {
         waitingForAI = false;
-	document.getElementById("sendBtn").disabled = false;
-	
-	chatBox.innerHTML += `<div><b>AI:</b> Error: ${err.message}</div>`;
+        document.getElementById("sendBtn").disabled = false;
+
+        chatBox.innerHTML += `<div><b>AI:</b> Error: ${err.message}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
-	
+
     }
 });
 

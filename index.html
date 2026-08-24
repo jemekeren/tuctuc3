@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>GH2 Integrated - Jim's Solar Power Control</title>
+<title>non GH Integrated - Jim's Solar Power Control</title>
 
 <style>
 body{
@@ -138,7 +138,7 @@ input{
 
 <body>
 
-<h2>GH2 Integrated - Jim's Solar Power Control System --- </h2>
+<h2>non GH2 Integrated - Jim's Solar Power Control System --- </h2>
 
 <p id="status">Not logged in</p>
 
@@ -448,24 +448,23 @@ async function typeWriter(element, text) {
 
 
 async function askHF(prompt, history, userName, telemetry) {
-    const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            message: prompt,
-            history: history,
-            userName: userName,
-            telemetry: telemetry // Injected live telemetry bundle payload
-        })
-    });
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please sign in before using Power AI.");
 
-    const data = await res.json();
-    if (!res.ok) {
-        throw new Error(data.error || JSON.stringify(data));
-    }
-    return data;
+  // Force refresh ensures a recently changed/disabled account is not using a stale token.
+  const idToken = await user.getIdToken(true);
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ message: prompt, history, userName, telemetry })
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Chat request failed");
+  return data;
 }
 
 // ---------------- LOGIN ----------------
