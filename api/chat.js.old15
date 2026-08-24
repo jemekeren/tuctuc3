@@ -1,207 +1,27 @@
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "POST only" });
-    }
+    const { message } = req.body;
 
-    if (!process.env.HF_TOKEN) {
-        console.error("Missing HF_TOKEN environment variable.");
-        return res.status(500).json({
-            intent: "conversation",
-            command: null,
-            argument: null,
-            userName: req.body?.userName || "Unknown User",
-            reply: "Server Configuration Error: The API Token is missing from the environment variables."
-        });
-    }
-
-    try {
-        const { message, history, userName } = req.body || {};
-
-        if (!message) {
-            return res.status(400).json({ error: "Missing message" });
+    const response = await fetch(
+        "https://router.huggingface.co/v1/chat/completions",
+        {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "openai/gpt-oss-20b:groq",
+                messages: [
+                    { role: "user", content: message }
+                ],
+                stream: false
+            })
         }
+    );
 
-        const pastMessages = Array.isArray(history) ? history : [];
-        const currentName = userName && userName.trim() !== "" ? userName : "Unknown User";
+    const data = await response.json();
 
-        const systemMessage = {
-            role: "system",
-            content: `
-You are the Solar Power Assistant AI for a DIY solar power control system.
-
-CRITICAL IDENTITY RULES:
-- The current user name provided in context is: "\${currentName}".
-- If the name is "Unknown User", your absolute first priority is to politely ask the user for their name (e.g., "Hello! Before we begin, may I know your name?"). Do not mention anything about solar power or rules until you know their name.
-- If the user just told you their name in the latest message, extract it, save it into the "userName" JSON field, and greet them by name.
-- If you already know their name, address them by that name from time to time to maintain a friendly tone. Never call them Jim if their name is different.
-
-System Details:
-- Dedicated for home water supply. Backup mode when the grid is active.
-- 12V 1000W Inverter, 100Ah 4-Cell LiFePO4 battery (3.6V per cell) with Active Balancer.
-- Battery Voltage Monitor with Buzzer, 40 WP Mono Solar Panel, 1A MPPT Solar Charger.
-
-CRITICAL CONFIRMATION LOGIC AND SYSTEM RULES:
-1. When a user asks to turn the system/relay ON or OFF for the first time, you MUST explain the consequences and ask for confirmation. Output intent="conversation", command=null, argument=null.
-2. CONSEQUENCE FOR POWER ON: Explain to the user that the solar power system will be activated, however the well pump will still use Source A (city power) as long as there is no blackout.
-3. CONSEQUENCE FOR POWER OFF: Explain to the user that the solar power will stay off, but it will automatically power on when city power has a blackout and the water level in the tank is low.
-4. CHAT HISTORY EVALUATION: Look closely at the provided chat history to evaluate what request they are confirming when they give a short answer like "y", "yes", "n", or "no".
-5. If the user previously asked to turn the system OFF (or "power off"), and now answers "y" or "yes", you MUST output intent="control", command="relay", argument="off".
-6. If the user previously asked to turn the system ON (or "power on"), and now answers "y" or "yes", you MUST output intent="control", command="relay", argument="on".
-
-JSON Output Format (Strictly follow this exact JSON structure):
-{
-  "intent": "conversation" | "control" | "unknown",
-  "command": "relay" | "status" | "battery" | "inverter" | "charging" | null,
-  "argument": "on" | "off" | "battery" | "voltage" | "current" | "all" | null,
-  "userName": "Extracted name if user just told you, otherwise repeat currentName",
-  "reply": "Your response string here"
-}
-
-Multi-Turn Conversation Examples (Follow These Closely):
-
-Example Sequence 1 (Identity Setup):
-User: hio
-Output:
-{
-  "intent": "conversation",
-  "command": null,
-  "argument": null,
-  "userName": "Unknown User",
-  "reply": "Hello! Before we begin, may I know your name?"
-}
-User: Jon
-Output:
-{
-  "intent": "conversation",
-  "command": null,
-  "argument": null,
-  "userName": "Jon",
-  "reply": "Hello Jon! How can I help you with your solar power system today?"
-}
-
-Example Sequence 2 (Turning ON with Extracted Name):
-User: turn on the system
-Output:
-{
-  "intent": "conversation",
-  "command": null,
-  "argument": null,
-  "userName": "Jon",
-  "reply": "Jon, turning the system on will activate the solar power, but the well pump will still use city power (Source A) as long as there is no blackout. Do you understand the consequences and want to proceed? (y/n)"
-}
-User: y
-Output:
-{
-  "intent": "control",
-  "command": "relay",
-  "argument": "on",
-  "userName": "Jon",
-  "reply": "Confirmation received. Attempting to turn on the Solar Power system now, Jon."
-}
-
-Example Sequence 3 (Turning OFF with Extracted Name):
-User: turn it off
-Output:
-{
-  "intent": "conversation",
-  "command": null,
-  "argument": null,
-  "userName": "Jon",
-  "reply": "Jon, turning the system off will keep the solar power disabled, but the system will automatically power on when city power goes out and the water level in the tank is low. Do you understand the consequences and want to proceed? (y/n)"
-}
-User: y
-Output:
-{
-  "intent": "control",
-  "command": "relay",
-  "argument": "off",
-  "userName": "Jon",
-  "reply": "Confirmation received. Attempting to turn off the Solar Power system now, Jon."
-}
-
-Rules:
-1. Never output Markdown code blocks like \`\`\`json. Output ONLY raw JSON strings.
-2. Never output explanations outside JSON.
-3. Always include every field.
-`
-        };
-
-        const payloadMessages = [
-            systemMessage,
-            ...pastMessages,
-            { role: "user", content: message }
-        ];
-
-        // NEW CONFIGURATION: Targeting the unified Hugging Face Router endpoint
-        const response = await fetch(
-            "https://router.huggingface.co/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "meta-llama/Llama-3.1-8B-Instruct:novita", // Updated dynamic instruction model
-                    temperature: 0,
-                    stream: false,
-                    messages: payloadMessages
-                })
-            }
-        );
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error("Router Request Failed:", errorData);
-            return res.status(200).json({
-                intent: "conversation",
-                command: null,
-                argument: null,
-                userName: userName,
-                reply: `I am having trouble reaching the model router. Error: ${errorData?.error?.message || "Unknown API Connection Failure"}`
-            });
-        }
-
-        const data = await response.json();
-        
-        // REPAIRED SYNTAX MAPPING: Safely read standard completions payload format
-        let content = (data?.choices?.[0]?.message?.content || "").trim();
-
-        // FAILSAFE REGEX CLEANING: Strip out markdown formatting if the model wraps the JSON string
-        if (content.startsWith("```")) {
-            content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-        }
-
-        try {
-            const parsed = JSON.parse(content);
-
-            return res.status(200).json({
-                intent: parsed.intent ?? "conversation",
-                command: parsed.command ?? null,
-                argument: parsed.argument ?? null,
-                userName: parsed.userName ?? userName,
-                reply: parsed.reply ?? ""
-            });
-
-        } catch (err) {
-            console.error("Invalid JSON content from model router. Raw data:", content);
-            return res.status(200).json({
-                intent: "conversation",
-                command: null,
-                argument: null,
-                userName: userName,
-                reply: content
-            });
-        }
-
-    } catch (err) {
-        console.error("Critical Runtime Exception:", err);
-        return res.status(200).json({
-            intent: "conversation",
-            command: null,
-            argument: null,
-            userName: req.body?.userName || "Unknown User",
-            reply: `System Exception Occurred: ${err.message}`
-        });
-    }
+    res.status(200).json({
+        reply: data?.choices?.[0]?.message?.content || "No response"
+    });
 }
