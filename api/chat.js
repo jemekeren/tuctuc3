@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       mem: String(telemetry?.mem ?? "--").slice(0, 40)
     };
 
-   const systemMessage = {
+      const systemMessage = {
             role: "system",
             content: `
 You are the Solar Power Assistant AI for a DIY solar power control system.
@@ -178,7 +178,8 @@ Rules:
 2. Never output explanations outside JSON.
 3. Always include every field.
 `
-};
+        };
+
 
 
 
