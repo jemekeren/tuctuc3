@@ -1,0 +1,10 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-southeast1-docker.pkg.dev/solarpowercontrol-21a1c/docker-repo/my-website:latest'
+      - '.'
+
+images:
+  - 'asia-southeast1-docker.pkg.dev/solarpowercontrol-21a1c/docker-repo/my-website:latest'

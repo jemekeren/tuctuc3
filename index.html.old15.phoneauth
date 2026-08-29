@@ -1,0 +1,2839 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>GH Integrated - Jim's Solar Power Control</title>
+
+<style>
+body{
+    font-family:Arial;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    position:relative;
+}
+
+.main{
+    max-width:600px;
+}
+
+.sysPanel{
+    position:fixed;
+    right:20px;
+    top:20px;
+    width:220px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    background:#f9f9f9;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sysTitle{
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.sysItem{
+    margin:8px 0;
+    font-size:13px;
+}
+
+.card{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+/* STYLISH HYPERLINK CARD FOR REPORTS */
+.report-card {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    border: none;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.45);
+}
+
+.report-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+.report-link span {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.report-card:hover .report-link span {
+    transform: translateX(5px);
+}
+
+button{
+    padding:12px 18px;
+    margin:5px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    margin:5px;
+    width:250px;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.green{color:green;}
+.red{color:red;}
+
+.harvest-chart-wrap {
+    position: relative;
+    height: 280px;
+    margin-top: 14px;
+}
+
+.small{
+    font-size:12px;
+    color:#666;
+}
+
+.video-thumbnails{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.video-thumbnails a{
+    width:180px;
+    text-decoration:none;
+    color:#333;
+    font-size:14px;
+}
+
+.video-thumbnails img{
+    width:180px;
+    height:100px;
+    object-fit:cover;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+
+.video-thumbnails img:hover{
+    transform:scale(1.05);
+    transition:.2s;
+}
+
+/* -----------------------------------------
+   BATTERY SOC CARD
+----------------------------------------- */
+
+.battery-metric {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.water-icon {
+    background: #e3f2fd;
+}
+
+.days-icon {
+    background: #e8f5e9;
+}
+
+.metric-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.metric-value {
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.battery-capacity {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* -----------------------------------------
+   FAILOVER STATUS CARD
+----------------------------------------- */
+
+.failover-card {
+    padding: 18px;
+}
+
+.failover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.failover-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.failover-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #e8f5e9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.failover-heading {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.automatic-badge {
+    background: #e8f5e9;
+    color: #198754;
+    border: 1px solid #b7dfc5;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.failover-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.trigger-icon {
+    font-size: 20px;
+}
+
+.trigger-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.trigger-label {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 3px;
+}
+
+.trigger-value {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+
+.relay-card {
+    background: #ffffff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+ <!--   max-width: 400px; -->
+    box-sizing: border-box;
+}
+
+.relay-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #1a202c;
+    font-weight: 600;
+}
+
+.relay-header .subtitle {
+    margin: 0 0 20px 0;
+    font-size: 13px;
+    color: #718096;
+}
+
+.status-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f7fafc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 24px; /* Increased margin slightly to align with the new button height depth */
+    border: 1px solid #edf2f7;
+}
+
+.status-label {
+    font-size: 14px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.status-badge {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 6px 16px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.state-off {
+    background-color: #fed7d7;
+    color: #c53030;
+}
+
+.state-on {
+    background-color: #c6f6d5;
+    color: #22543d;
+    box-shadow: 0 0 8px rgba(72, 187, 120, 0.4);
+}
+
+.button-group {
+    display: flex;
+    gap: 16px;
+}
+
+/* BASE BUTTON LEVEL MECHANICS */
+.btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    top: 0; /* Base position for tracking layout offset */
+    transition: all 0.1s ease; /* Fast transition ensures responsiveness to clicks */
+    user-select: none;
+}
+
+/* START BUTTON: Tactile Layers */
+.btn-start {
+    background-color: #48bb78;
+    color: white;
+    /* Bottom shadow represents the physical thickness/depth of the button block */
+    box-shadow: 0 4px 0 #2f855a, 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-start:hover {
+    background-color: #38a169;
+    box-shadow: 0 4px 0 #276749, 0 8px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* The Pressed Action */
+.btn-start:active {
+    top: 4px; /* Shifts down by exactly the thickness of the bottom shadow */
+    background-color: #2f855a;
+    box-shadow: 0 0 0 #276749, 0 2px 4px rgba(0, 0, 0, 0.1); /* Collapses depth entirely */
+}
+
+/* STOP BUTTON: Tactile Layers */
+.btn-stop {
+    background-color: #e53e3e;
+    color: white;
+    box-shadow: 0 4px 0 #9b2c2c, 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-stop:hover {
+    background-color: #c53030;
+    box-shadow: 0 4px 0 #742a2a, 0 8px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* The Pressed Action */
+.btn-stop:active {
+    top: 4px; /* Shifts down by exactly the thickness of the bottom shadow */
+    background-color: #9b2c2c;
+    box-shadow: 0 0 0 #742a2a, 0 2px 4px rgba(0, 0, 0, 0.1); /* Collapses depth entirely */
+}
+
+/* STATUS BADGE SYSTEM */
+.status-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f7fafc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #edf2f7;
+}
+
+.status-label {
+    font-size: 14px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.status-badge {
+    font-size: 14px;
+    font-weight: bold;
+    padding: 6px 16px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+/* Use these classes via JavaScript to toggle states */
+.state-off {
+    background-color: #fed7d7;
+    color: #c53030;
+}
+
+.state-on {
+    background-color: #c6f6d5;
+    color: #22543d;
+    box-shadow: 0 0 8px rgba(72, 187, 120, 0.4);
+}
+
+/* BUTTONS */
+.button-group {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn active {
+    transform: scale(0.98);
+}
+
+.btn-start {
+    background-color: #48bb78;
+    color: white;
+}
+
+.btn-start:hover {
+    background-color: #38a169;
+}
+
+.btn-stop {
+    background-color: #e53e3e;
+    color: white;
+}
+
+.btn-stop:hover {
+    background-color: #c53030;
+}
+
+
+/* AC INVERTER VOLTAGE CARD STYLES */
+.inverter-card {
+    background: #ffffff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  <!--  max-width: 400px; --> 
+    box-sizing: border-box;
+}
+
+.inverter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.inverter-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #1a202c;
+    font-weight: 600;
+}
+
+.inverter-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #718096;
+}
+
+.inverter-icon {
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    background: #fffaf0; /* Soft amber/electric tint background */
+    border: 1px solid #feebcb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inverter-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.voltage-highlight {
+    font-size: 32px;
+    font-weight: bold;
+    color: #2b6cb0; /* Deep electric blue for readability */
+    line-height: 1;
+}
+
+.inverter-unit {
+    font-size: 14px;
+    color: #718096;
+    font-weight: 600;
+}
+
+/* -----------------------------------------
+BATTERY & SOLAR POWER CARDS
+----------------------------------------- */
+
+.power-card {
+padding: 18px;
+background: linear-gradient(145deg, #ffffff, #f8fafc);
+border: 1px solid #e2e8f0;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+transition: transform 0.2s ease,
+box-shadow 0.2s ease;
+}
+
+.power-card:hover {
+transform: translateY(-2px);
+box-shadow: 0 7px 20px rgba(0, 0, 0, 0.10);
+}
+
+/* Header */
+
+.power-card-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 18px;
+}
+
+.power-card-header h3 {
+margin: 0;
+font-size: 18px;
+color: #1f2937;
+}
+
+.power-subtitle {
+margin-top: 3px;
+font-size: 12px;
+color: #6b7280;
+}
+
+/* Circular icon */
+
+.power-icon {
+width: 46px;
+height: 46px;
+border-radius: 50%;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+font-size: 24px;
+flex-shrink: 0;
+
+}
+
+.battery-icon {
+background: #e8f5e9;
+}
+
+.solar-icon {
+background: #fff8e1;
+}
+
+/* Main battery reading */
+
+.power-reading {
+display: flex;
+align-items: baseline;
+gap: 6px;
+padding: 12px 14px;
+
+background: #f8fafc;
+border-radius: 10px;
+border: 1px solid #edf0f3;
+
+}
+
+.power-value {
+font-size: 28px;
+font-weight: 700;
+color: #198754;
+line-height: 1;
+}
+
+.power-unit {
+font-size: 15px;
+font-weight: 600;
+color: #6b7280;
+}
+
+/* Solar charger metrics */
+
+.charger-metrics {
+display: flex;
+align-items: stretch;
+background: #f8fafc;
+border-radius: 10px;
+border: 1px solid #edf0f3;
+padding: 14px;
+
+}
+
+.charger-metric {
+flex: 1;
+min-width: 0;
+}
+
+.metric-label {
+font-size: 12px;
+color: #6b7280;
+margin-bottom: 8px;
+}
+
+.metric-reading {
+display: flex;
+align-items: baseline;
+gap: 5px;
+}
+
+.metric-reading .power-value {
+font-size: 24px;
+}
+
+/* Divider between voltage and current */
+
+.charger-divider {
+width: 1px;
+background: #dfe3e8;
+margin: 0 15px;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+.charger-metrics {
+    flex-direction: column;
+    gap: 14px;
+}
+
+.charger-divider {
+    width: 100%;
+    height: 1px;
+    margin: 0;
+}
+
+
+}
+
+
+/* Color Utility Classes */
+.hijau {
+    color: #38a169 !important; /* Vibrant system dashboard green */
+}
+
+.merah {
+    color: #e53e3e !important; /* Urgent system warning red */
+}
+
+
+</style>
+</head>
+
+<body>
+
+<h2>GH Integrated - Jim's DIY Solar Power Control System </h2>
+
+<p id="status">Not logged in</p>
+
+<div class="main">
+
+        <div id="loginBox" class="card">
+            <h3 id="formTitle">Login</h3>
+            
+            <!-- STEP 1: Enter Phone Number (Visible by default) -->
+            <div id="phoneStep">
+                <label for="phoneNumber">Phone Number:</label>
+                <!-- Important: Use E.164 format, e.g., +12345678901 -->
+                <input id="phoneNumber" type="tel" placeholder="+12345678901"><br>
+                
+                <!-- REQUIRED: Empty container where Firebase attaches hidden security checks -->
+                <div id="recaptcha-container"></div>
+                
+                <button id="sendCodeBtn">Send Verification Code</button>
+            </div>
+
+            <!-- STEP 2: Enter SMS OTP Code (Hidden by default) -->
+            <div id="verificationStep" style="display: none;">
+                <label for="verificationCode">6-Digit Verification Code:</label>
+                <input id="verificationCode" type="text" placeholder="123456" maxlength="6"><br>
+                <button id="loginBtn">Verify & Login</button>
+            </div>
+
+            <!-- STEP 3: Logout Action (Hidden by default) -->
+            <!-- <button id="logoutBtn" style="display: none;">Logout</button> -->
+        </div>
+
+</div>
+
+<div id="dashboard" style="display:none;">
+
+<!-- STYLISH HYPERLINK TO RPT.HTML -->
+<div class="card report-card">
+<a href="rpt.html" class="report-link">
+📊 View Solar Performance Reports & Logs <span>&rarr;</span>
+</a>
+</div>
+
+<div class="card failover-card">
+
+    <div class="failover-header">
+
+        <div class="failover-title">
+
+            <div class="failover-icon">
+                ⚡
+            </div>
+
+            <div>
+                <div class="failover-heading">
+                    Failover Mode
+                </div>
+            </div>
+
+        </div>
+
+        <div class="automatic-badge">
+            ● AUTOMATIC
+        </div>
+
+    </div>
+
+
+    <div class="failover-trigger">
+
+        <div class="trigger-icon">
+            ⚠️
+        </div>
+
+        <div class="trigger-content">
+
+            <div class="trigger-label">
+                Failover Trigger
+            </div>
+
+            <div class="trigger-value">
+                Low Water Tank + City Power Outage
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card relay-card">
+    <div class="relay-header">
+        <h3>Solar Power Manual Activation</h3>
+        <p class="subtitle">Relay Status Control Panel</p>
+    </div>
+
+    <div class="status-container">
+        <span class="status-label">Current State:</span>
+        <div id="relayStatus" class="status-badge state-off">OFF</div>
+    </div>
+
+    <!-- The interactive button group -->
+    <div class="button-group">
+        <button id="onBtn" class="btn btn-start">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+            Start
+        </button>
+        <button id="offBtn" class="btn btn-stop">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/></svg>
+            Stop
+        </button>
+    </div>
+</div>
+
+<div class="card inverter-card">
+    <div class="inverter-header">
+        <span class="inverter-icon">⚡</span>
+        <div>
+            <h3>AC Inverter Voltage</h3>
+            <p class="inverter-subtitle">Grid Output Status</p>
+        </div>
+    </div>
+    <div class="inverter-display">
+        <div id="acVoltage" class="value voltage-highlight">N/A</div>
+        <span class="inverter-unit">Volts AC</span>
+    </div>
+</div>
+
+
+
+<div class="card">
+
+    <h3>Battery SOC</h3>
+
+    <!-- SOC -->
+    <div id="batterySoc" class="value green">
+        N/A%
+    </div>
+
+    <!-- Battery Capacity -->
+    <div id="batteryCapacity" class="battery-capacity">
+        Battery Capacity: N/A Wh
+    </div>
+
+
+    <!-- Pump Runtime -->
+    <div class="battery-metric">
+
+        <div class="metric-icon days-icon">
+            📅
+        </div>
+
+        <div class="metric-content">
+
+            <div class="metric-label">
+                Pump Runtime Remaining
+            </div>
+
+            <div id="batteryRemainingDays"
+                 class="metric-value green">
+                N/A days
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Water Production -->
+    <div class="battery-metric">
+
+        <div class="metric-icon water-icon">
+            💧
+        </div>
+
+        <div class="metric-content">
+
+            <div class="metric-label">
+                Water Production Remaining
+            </div>
+
+            <div id="batteryWaterLitres"
+                 class="metric-value green">
+                N/A litres
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="small" style="margin-top:10px;">
+        Based on pump running 20 minutes per day at 230 W.
+    </div>
+
+</div>
+
+<div class="card power-card">
+<div class="power-card-header">
+    <div class="power-icon battery-icon">🔋</div>
+
+    <div>
+        <h3>Battery</h3>
+        <div class="power-subtitle">DC Battery Voltage</div>
+    </div>
+</div>
+
+<div class="power-reading">
+    <div id="dcVoltage" class="power-value">
+        missing
+    </div>
+    <div class="power-unit">V</div>
+</div>
+
+</div>
+
+<div class="card power-card">
+
+<div class="power-card-header">
+    <div class="power-icon solar-icon">☀️</div>
+
+    <div>
+        <h3>Solar Charger</h3>
+        <div class="power-subtitle">Solar charging input</div>
+    </div>
+</div>
+
+
+<div class="charger-metrics">
+
+    <div class="charger-metric">
+
+        <div class="metric-label">
+            ⚡ Charging Voltage
+        </div>
+
+        <div class="metric-reading">
+            <span id="dcSolarVoltage" class="power-value">
+                N/A
+            </span>
+            <span class="power-unit">V</span>
+        </div>
+
+    </div>
+
+
+    <div class="charger-divider"></div>
+
+
+    <div class="charger-metric">
+
+        <div class="metric-label">
+            🔌 Charging Current
+        </div>
+
+        <div class="metric-reading">
+            <span id="dcSolarCurr" class="power-value">
+                N/A
+            </span>
+            <span class="power-unit">A</span>
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+
+<div class="card">
+<h3>Solar Harvest</h3>
+
+<div id="solarHarvest" class="value green">
+N/A Watt Hour
+</div>
+
+<div class="harvest-chart-wrap">
+<canvas
+    id="harvestChart"
+    aria-label="Solar harvested watt hour line chart">
+</canvas>
+</div>
+
+</div>
+
+
+<!-- BATTERY CHARGE REMAINING TIME -->
+<div class="card">
+
+<h3>Battery Charge Remaining Time</h3>
+
+<div id="batteryChargeTime" class="value green">
+N/A
+</div>
+
+<div class="small">
+Estimated time to reach 1,152 Wh based on current harvested Watt Hour.
+</div>
+
+</div>
+
+
+<div class="card">
+<h3>Power AI</h3>
+
+<div id="chatBox"
+     style="height:200px; overflow:auto; border:1px solid #ccc; padding:10px;">
+</div>
+
+<input id="chatInput"
+       placeholder="Ask something about this Power system..."
+       style="width:70%;">
+
+<button id="sendBtn">Send</button>
+
+</div>
+
+
+<div class="card">
+
+<h3>Video Collections</h3>
+
+<div class="video-thumbnails">
+
+<a href="https://www.youtube.com/watch?v=08b39qVOWs4"
+   target="_blank"
+   rel="noopener noreferrer">
+
+<img src="https://img.youtube.com/vi/08b39qVOWs4/maxresdefault.jpg">
+
+<p>Solar Power System Overview</p>
+
+</a>
+
+
+<a href="https://www.youtube.com/watch?v=r7bZVL0vaQo"
+   target="_blank"
+   rel="noopener noreferrer">
+
+<img src="https://img.youtube.com/vi/r7bZVL0vaQo/maxresdefault.jpg">
+
+<p>Micro Controller</p>
+
+</a>
+
+
+<a href="#">
+
+<img src="solarpanel.jpg">
+
+<p>Solar Panel</p>
+
+</a>
+
+</div>
+
+<hr>
+
+<button id="logoutBtn">Logout</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- SYSTEM MONITOR -->
+
+<div class="sysPanel">
+
+<div class="sysTitle">
+Controller
+</div>
+
+<div class="sysItem">
+CPU: <span id="cpuUsage">--</span>
+</div>
+
+<div class="sysItem">
+MEM: <span id="memUsage">--</span>
+</div>
+
+<div class="sysItem">
+UPTIME (sec): <span id="uptime">--</span>
+</div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+
+<script type="module">
+
+import {
+    initializeApp
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+
+import {
+    getAuth,
+    RecaptchaVerifier, 
+    signInWithPhoneNumber, 
+    signOut,
+    onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    set,
+    get,
+    onValue
+}
+from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyCAPPjCvtuQ8gGgITH5gqcXBxlB0c9iU9E",
+
+    authDomain: "solarpowercontrol-21a1c.firebaseapp.com",
+
+    databaseURL:
+        "https://solarpowercontrol-21a1c-default-rtdb.asia-southeast1.firebasedatabase.app/",
+
+    projectId: "solarpowercontrol-21a1c",
+
+    storageBucket:
+        "solarpowercontrol-21a1c.firebasestorage.app",
+
+    messagingSenderId: "836080376430",
+
+    appId:
+        "1:836080376430:web:12bd6396690a6ff3cde47f"
+
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getDatabase(app);
+
+// Global variable to temporarily hold the SMS session data
+let confirmationResult = null;
+
+
+
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+    'size': 'invisible',
+    'callback': (response) => {
+        // reCAPTCHA resolved
+    }
+});
+
+
+document.getElementById("sendCodeBtn").addEventListener("click", async () => {
+    const phoneNumber = document.getElementById("phoneNumber").value;
+    const status = document.getElementById("status");
+    const appVerifier = window.recaptchaVerifier;
+
+    if (!phoneNumber) {
+        status.textContent = "Please enter a valid phone number.";
+        return;
+    }
+
+    try {
+        status.textContent = "Sending SMS code...";
+        // Request SMS delivery from Firebase
+        confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        
+        status.textContent = "SMS code sent! Check your phone.";
+        // Toggle view panels
+        document.getElementById("phoneStep").style.display = "none";
+        document.getElementById("verificationStep").style.display = "block";
+    } catch (err) {
+        status.textContent = "Error sending SMS: " + err.message;
+        console.error(err);
+    }
+});
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+    const code = document.getElementById("verificationCode").value;
+    const status = document.getElementById("status");
+
+    if (!code) {
+        status.textContent = "Please enter the 6-digit code.";
+        return;
+    }
+
+    try {
+        status.textContent = "Verifying...";
+        // Confirm the verification token matches the session code
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        
+        status.textContent = `Logged in as: ${user.phoneNumber}`;
+    } catch (err) {
+        status.textContent = "Invalid code. Please try again.";
+        console.error(err);
+    }
+});
+
+
+
+
+// ----------------------------------------------------
+// APPLICATION STATE
+// ----------------------------------------------------
+
+let conversationHistory = [];
+
+let currentSessionUser = null;
+
+let pollTimer = null;
+
+let harvestChart = null;
+
+let stopHarvestChart = null;
+
+let activeHistoryDate = "";
+
+
+// ----------------------------------------------------
+// BATTERY CONSTANTS
+// ----------------------------------------------------
+
+// Maximum battery energy allowed for this system.
+// 100 Ah LiFePO4 battery.
+// Usable/chargeable energy = 1,152 Wh.
+
+const MAX_BATTERY_WH = 1152;
+const MAX_USABLE_SOC = 90;
+
+// ----------------------------------------------------
+// WATER PUMP ENERGY CONSUMPTION
+// ----------------------------------------------------
+
+// Pump power consumption
+const PUMP_POWER_W = 230;
+
+// Typical pump operation per day
+const PUMP_RUNTIME_MIN_PER_DAY = 20;
+
+// Calculate daily pump energy consumption
+const PUMP_DAILY_WH =
+    PUMP_POWER_W *
+    (PUMP_RUNTIME_MIN_PER_DAY / 60);
+
+// Water produced by pump during one 20-minute operation
+const PUMP_WATER_LITRES_PER_RUN = 600;
+
+//const pumpRemainingDays =
+//    currentBatteryWh / PUMP_DAILY_WH;
+
+	
+
+// ----------------------------------------------------
+// SINGAPORE DATE
+// ----------------------------------------------------
+
+function getSingaporeDate() {
+
+    const parts =
+        new Intl.DateTimeFormat("en-GB", {
+
+            timeZone: "Asia/Singapore",
+
+            year: "numeric",
+
+            month: "2-digit",
+
+            day: "2-digit"
+
+        }).formatToParts(new Date());
+
+
+    const values =
+        Object.fromEntries(
+
+            parts
+                .filter(part => part.type !== "literal")
+                .map(part => [part.type, part.value])
+
+        );
+
+
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+
+// ----------------------------------------------------
+// HARVEST CHART
+// ----------------------------------------------------
+
+function redrawHarvestChart(history) {
+
+    const points =
+        Object.entries(history || {})
+
+            .map(([time, wh]) => ({
+
+                time,
+
+                wh: Number(wh)
+
+            }))
+
+            .filter(point =>
+                Number.isFinite(point.wh)
+            )
+
+            .sort((a, b) =>
+                a.time.localeCompare(b.time)
+            );
+
+
+    const labels =
+        points.map(point => point.time);
+
+
+    const values =
+        points.map(point => point.wh);
+
+
+    if (!harvestChart) {
+
+        harvestChart =
+            new Chart(
+
+                document.getElementById("harvestChart"),
+
+                {
+
+                    type: "line",
+
+                    data: {
+
+                        labels,
+
+                        datasets: [{
+
+                            label:
+                                "Accumulated Watt Hour",
+
+                            data:
+                                values,
+
+                            borderColor:
+                                "#198754",
+
+                            backgroundColor:
+                                "rgba(25, 135, 84, 0.12)",
+
+                            fill: true,
+
+                            tension: 0.25,
+
+                            pointRadius: 2,
+
+                            pointHoverRadius: 5
+
+                        }]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        animation: {
+
+                            duration: 250
+
+                        },
+
+                        scales: {
+
+                            x: {
+
+                                title: {
+
+                                    display: true,
+
+                                    text:
+                                        "Time (one-minute samples)"
+
+                                }
+
+                            },
+
+                            y: {
+
+                                beginAtZero: true,
+
+                                title: {
+
+                                    display: true,
+
+                                    text:
+                                        "Accumulated Watt Hour"
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+        return;
+    }
+
+
+    harvestChart.data.labels =
+        labels;
+
+    harvestChart.data.datasets[0].data =
+        values;
+
+    harvestChart.update();
+
+}
+
+
+// ----------------------------------------------------
+// SUBSCRIBE TO HARVEST HISTORY
+// ----------------------------------------------------
+
+function subscribeHarvestChart() {
+
+    const today =
+        getSingaporeDate();
+
+
+    if (today === activeHistoryDate) {
+
+        return;
+
+    }
+
+
+    if (stopHarvestChart) {
+
+        stopHarvestChart();
+
+    }
+
+
+    activeHistoryDate =
+        today;
+
+
+    stopHarvestChart =
+
+        onValue(
+
+            ref(db, `harvest_history/${today}`),
+
+            snapshot => {
+
+                redrawHarvestChart(
+                    snapshot.val()
+                );
+
+            },
+
+            error => {
+
+                console.error(
+                    "Harvest history listener error:",
+                    error
+                );
+
+            }
+
+        );
+
+}
+
+
+// ----------------------------------------------------
+// CHAT ENTER KEY
+// ----------------------------------------------------
+
+document
+    .getElementById("chatInput")
+    .addEventListener("keydown", e => {
+
+        if (e.key === "Enter") {
+
+            e.preventDefault();
+
+            document
+                .getElementById("sendBtn")
+                .click();
+
+        }
+
+    });
+
+
+let waitingForAI = false;
+
+
+// ----------------------------------------------------
+// POWER AI
+// ----------------------------------------------------
+
+document
+    .getElementById("sendBtn")
+    .addEventListener("click", async () => {
+
+        const input =
+            document.getElementById("chatInput");
+
+        const chatBox =
+            document.getElementById("chatBox");
+
+
+        const userText =
+            input.value.trim();
+
+
+        if (!userText) return;
+
+
+        chatBox.innerHTML +=
+            `<div><b>You:</b> ${userText}</div>`;
+
+
+        input.value = "";
+
+
+        if (waitingForAI) return;
+
+
+        waitingForAI = true;
+
+
+        document
+            .getElementById("sendBtn")
+            .disabled = true;
+
+
+        try {
+
+            const [
+
+                snapInverter,
+
+                snapBatt,
+
+                snapSolarVolt,
+
+                snapSolarCur,
+
+                snapCpu,
+
+                snapMem
+
+            ] = await Promise.all([
+
+                get(ref(db, "invertervolt")),
+
+                get(ref(db, "battvol")),
+
+                get(ref(db, "solarvolt")),
+
+                get(ref(db, "solarcur")),
+
+                get(ref(db, "cpu")),
+
+                get(ref(db, "mem"))
+
+            ]);
+
+
+            const telemetryPayload = {
+
+                invertervolt:
+                    snapInverter.exists()
+                    ? snapInverter.val()
+                    : "N/A",
+
+                battvol:
+                    snapBatt.exists()
+                    ? snapBatt.val()
+                    : "missing",
+
+                solarvolt:
+                    snapSolarVolt.exists()
+                    ? snapSolarVolt.val()
+                    : "N/A",
+
+                solarcur:
+                    snapSolarCur.exists()
+                    ? snapSolarCur.val()
+                    : "N/A",
+
+                cpu:
+                    snapCpu.exists()
+                    ? snapCpu.val()
+                    : "--",
+
+                mem:
+                    snapMem.exists()
+                    ? snapMem.val()
+                    : "--"
+
+            };
+
+
+            const thinking =
+                document.createElement("div");
+
+
+            thinking.id =
+                "thinking";
+
+
+            thinking.innerHTML =
+                "<b>AI:</b> <i>Thinking...</i>";
+
+
+            chatBox.appendChild(
+                thinking
+            );
+
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+
+
+            const ai =
+                await askHF(
+
+                    userText,
+
+                    conversationHistory,
+
+                    currentSessionUser,
+
+                    telemetryPayload
+
+                );
+
+
+            thinking.remove();
+
+
+            const aiRow =
+                document.createElement("div");
+
+
+            const label =
+                document.createElement("b");
+
+
+            label.textContent =
+                "AI: ";
+
+
+            const span =
+                document.createElement("span");
+
+
+            aiRow.appendChild(label);
+
+            aiRow.appendChild(span);
+
+            chatBox.appendChild(aiRow);
+
+
+            await typeWriter(
+                span,
+                ai.reply
+            );
+
+
+            if (
+                ai.userName &&
+                ai.userName !== "Unknown User"
+            ) {
+
+                currentSessionUser =
+                    ai.userName;
+
+            }
+
+
+            conversationHistory.push({
+
+                role: "user",
+
+                content: userText
+
+            });
+
+
+            conversationHistory.push({
+
+                role: "assistant",
+
+                content: ai.reply
+
+            });
+
+
+            if (
+                conversationHistory.length > 10
+            ) {
+
+                conversationHistory.splice(0, 2);
+
+            }
+
+
+            if (
+                ai.intent === "control"
+            ) {
+
+                if (
+                    ai.command === "relay"
+                ) {
+
+                    if (
+                        ai.argument === "on"
+                    ) {
+
+                        await set(
+                            ref(db, "command_switch"),
+                            "0"
+                        );
+
+                    }
+
+                    else if (
+                        ai.argument === "off"
+                    ) {
+
+                        await set(
+                            ref(db, "command_switch"),
+                            "1"
+                        );
+
+                    }
+
+                }
+
+            }
+
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+
+
+            waitingForAI = false;
+
+            document
+                .getElementById("sendBtn")
+                .disabled = false;
+
+
+        }
+
+        catch (err) {
+
+            waitingForAI = false;
+
+            document
+                .getElementById("sendBtn")
+                .disabled = false;
+
+
+            chatBox.innerHTML +=
+                `<div><b>AI:</b> Error: ${err.message}</div>`;
+
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+
+        }
+
+    });
+
+
+// ----------------------------------------------------
+// TYPEWRITER
+// ----------------------------------------------------
+
+async function typeWriter(element, text) {
+
+    element.textContent = "";
+
+
+    let i = 0;
+
+
+    while (i < text.length) {
+
+        const chunk =
+            Math.floor(Math.random() * 4) + 1;
+
+
+        element.textContent +=
+            text.slice(i, i + chunk);
+
+
+        i += chunk;
+
+
+        element.parentElement.parentElement.scrollTop =
+            element.parentElement.parentElement.scrollHeight;
+
+
+        let delay =
+            18 + Math.random() * 40;
+
+
+        if (
+            /[.,!?]/.test(text[i - 1])
+        ) {
+
+            delay += 180;
+
+        }
+
+
+        await new Promise(
+            r => setTimeout(r, delay)
+        );
+
+    }
+
+}
+
+
+// ----------------------------------------------------
+// AI API
+// ----------------------------------------------------
+
+async function askHF(
+    prompt,
+    history,
+    userName,
+    telemetry
+) {
+
+    const user =
+        auth.currentUser;
+
+
+    if (!user) {
+
+        throw new Error(
+            "Please sign in before using Power AI."
+        );
+
+    }
+
+
+    const idToken =
+        await user.getIdToken(true);
+
+
+    const res =
+        await fetch(
+            "/api/chat",
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json",
+
+                    "Authorization":
+                        `Bearer ${idToken}`
+
+                },
+
+                body: JSON.stringify({
+
+                    message: prompt,
+
+                    history,
+
+                    userName,
+
+                    telemetry
+
+                })
+
+            }
+        );
+
+
+    const data =
+        await res.json();
+
+
+    if (!res.ok) {
+
+        throw new Error(
+            data.error ||
+            "Chat request failed"
+        );
+
+    }
+
+
+    return data;
+
+}
+
+
+// ----------------------------------------------------
+// LOGIN
+// ----------------------------------------------------
+
+document
+    .getElementById("loginBtn")
+    .addEventListener("click", async () => {
+
+        const email =
+            document.getElementById("email").value;
+
+
+        const password =
+            document.getElementById("password").value;
+
+
+        try {
+
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        }
+
+        catch(err) {
+
+            alert(err.message);
+
+        }
+
+    });
+
+
+// ----------------------------------------------------
+// LOGOUT
+// ----------------------------------------------------
+
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+            } catch (err) {
+                alert("Error during session logout: " + err.message);
+            }
+        });
+
+
+// ----------------------------
+// MANUAL RELAY CONTROL
+// ----------------------------------------------------
+
+document
+    .getElementById("onBtn")
+    .addEventListener("click", async () => {
+
+        await set(
+            ref(db, "command_switch"),
+            "0"
+        );
+
+    });
+
+
+document
+    .getElementById("offBtn")
+    .addEventListener("click", async () => {
+
+        await set(
+            ref(db, "command_switch"),
+            "1"
+        );
+
+    });
+
+
+// ----------------------------------------------------
+// TELEMETRY POLLING
+// ----------------------------------------------------
+
+async function updateData() {
+
+    try {
+
+        subscribeHarvestChart();
+
+
+        // ------------------------------------------------
+        // RELAY STATUS
+        // ------------------------------------------------
+
+        let snapshot =
+            await get(
+                ref(db, "status_switch")
+            );
+
+
+        if (snapshot.exists()) {
+
+            const v =
+                String(snapshot.val())
+                    .trim()
+                    .toLowerCase();
+
+
+            const el =
+                document.getElementById(
+                    "relayStatus"
+                );
+
+
+            if (v === "relay_on") {
+
+                el.innerHTML =
+                    '<span class="green">RELAY ON</span>';
+
+            }
+
+            else if (v === "relay_off") {
+
+                el.innerHTML =
+                    '<span class="red">RELAY OFF</span>';
+
+            }
+
+            else {
+
+                el.innerText =
+                    "--";
+
+            }
+
+        }
+
+
+// ------------------------------------------------
+// AC VOLTAGE
+// ------------------------------------------------
+snapshot = await get(ref(db, "invertervolt"));
+
+const acVoltageElement = document.getElementById("acVoltage");
+
+if (snapshot.exists()) {
+    const acVoltageValue = snapshot.val();
+    acVoltageElement.innerText = acVoltageValue;
+    
+    // Parse the value into a float for grid threshold monitoring
+    const numericAcVoltage = parseFloat(acVoltageValue);
+    
+    if (!isNaN(numericAcVoltage)) {
+        // merah warning if grid pressure drops too low (e.g., brownout / dropout below 210V)
+        if (numericAcVoltage < 210) {
+            acVoltageElement.classList.add("merah");
+            acVoltageElement.classList.remove("hijau");
+        } else {
+            acVoltageElement.classList.add("hijau");
+            acVoltageElement.classList.remove("merah");
+        }
+    }
+} else {
+    acVoltageElement.innerText = "N/A";
+    acVoltageElement.classList.remove("hijau", "merah");
+}
+
+
+        // ------------------------------------------------
+        // BATTERY VOLTAGE -> SOC
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "battvol")
+            );
+
+
+        const batterySocEl =
+            document.getElementById(
+                "batterySoc"
+            );
+
+
+        // SOC is declared outside the voltage block
+        // so it can also be used for the Wh calculation.
+
+        let soc = NaN;
+
+
+        if (snapshot.exists()) {
+
+            const voltage =
+                Number(snapshot.val());
+
+
+            if (Number.isFinite(voltage)) {
+
+
+                // ----------------------------------------
+                // VOLTAGE TO SOC TABLE
+                // ----------------------------------------
+
+                if (voltage >= 13.6) {
+
+                    // 13.6 V = 100%
+                    soc = 100;
+
+                }
+
+                else if (voltage >= 13.4) {
+
+                    // 13.4 V = 90%
+                    // 13.6 V = 100%
+
+                    soc =
+                        90 +
+                        ((voltage - 13.4) / 0.2) *
+                        10;
+
+                }
+
+                else if (voltage >= 13.3) {
+
+                    // 13.3 V = 80%
+                    // 13.4 V = 90%
+
+                    soc =
+                        80 +
+                        ((voltage - 13.3) / 0.1) *
+                        10;
+
+                }
+
+                else if (voltage >= 13.2) {
+
+                    // 13.2 V = 70%
+                    // 13.3 V = 80%
+
+                    soc =
+                        70 +
+                        ((voltage - 13.2) / 0.1) *
+                        10;
+
+                }
+
+                else if (voltage >= 13.1) {
+
+                    // 13.1 V = 60%
+                    // 13.2 V = 70%
+
+                    soc =
+                        60 +
+                        ((voltage - 13.1) / 0.1) *
+                        10;
+
+                }
+
+                else if (voltage >= 13.0) {
+
+                    // 13.0 V = 50%
+                    // 13.1 V = 60%
+
+                    soc =
+                        50 +
+                        ((voltage - 13.0) / 0.1) *
+                        10;
+
+                }
+
+                else if (voltage >= 12.9) {
+
+                    // 12.9 V = 30%
+                    // 13.0 V = 50%
+
+                    soc =
+                        30 +
+                        ((voltage - 12.9) / 0.1) *
+                        20;
+
+                }
+
+                else if (voltage >= 12.8) {
+
+                    // 12.8 V = 20%
+                    // 12.9 V = 30%
+
+                    soc =
+                        20 +
+                        ((voltage - 12.8) / 0.1) *
+                        10;
+
+                }
+
+                else if (voltage >= 12.0) {
+
+                    // 12.0 V = 10%
+                    // 12.8 V = 20%
+
+                    soc =
+                        10 +
+                        ((voltage - 12.0) / 0.8) *
+                        10;
+
+                }
+
+                else if (voltage >= 10.0) {
+
+                    // 10.0 V = 0%
+                    // 12.0 V = 10%
+
+                    soc =
+                        ((voltage - 10.0) / 2.0) *
+                        10;
+
+                }
+
+                else {
+
+                    soc = 0;
+
+                }
+
+
+                // Keep SOC between 0 and 100
+
+                soc =
+                    Math.max(
+                        0,
+                        Math.min(100, soc)
+                    );
+
+
+                // Whole percentage
+
+                soc =
+                    Math.round(soc);
+
+
+                // Display SOC
+
+                batterySocEl.innerText =
+                    `${soc}%`;
+
+
+                // Less than 10% = red
+                // Otherwise = green
+
+                batterySocEl.classList.remove(
+                    "green",
+                    "red"
+                );
+
+
+                batterySocEl.classList.add(
+                    soc < 10
+                    ? "red"
+                    : "green"
+                );
+
+            }
+
+            else {
+
+                batterySocEl.innerText =
+                    "N/A%";
+
+                batterySocEl.classList.remove(
+                    "green",
+                    "red"
+                );
+
+            }
+
+        }
+
+        else {
+
+            batterySocEl.innerText =
+                "N/A%";
+
+            batterySocEl.classList.remove(
+                "green",
+                "red"
+            );
+
+        }
+
+
+        // ------------------------------------------------
+        // DC BATTERY VOLTAGE
+        // ------------------------------------------------
+
+
+snapshot = await get(ref(db, "battvol"));
+
+const dcVoltageElement = document.getElementById("dcVoltage");
+
+if (snapshot.exists()) {
+    const voltageValue = snapshot.val();
+    dcVoltageElement.innerText = voltageValue;
+    
+    // Parse to a number for comparison (handles strings like "12.5" safely)
+    const numericVoltage = parseFloat(voltageValue);
+    
+    if (!isNaN(numericVoltage)) {
+        if (numericVoltage < 12.8) {
+            dcVoltageElement.classList.add("merah");
+            dcVoltageElement.classList.remove("hijau");
+        } else {
+            dcVoltageElement.classList.add("hijau");
+            dcVoltageElement.classList.remove("merah");
+        }
+    }
+} else {
+    dcVoltageElement.innerText = "err";
+    dcVoltageElement.classList.remove("hijau", "merah");
+}
+
+
+
+ 
+// ------------------------------------------------
+// DC CHARGING VOLTAGE
+// ------------------------------------------------
+snapshot = await get(ref(db, "solarvolt"));
+
+const dcSolarVoltageElement = document.getElementById("dcSolarVoltage");
+
+if (snapshot.exists()) {
+    const solarVoltageValue = snapshot.val();
+    dcSolarVoltageElement.innerText = solarVoltageValue;
+    
+    // Parse the value into a float for threshold monitoring
+    const numericSolarVoltage = parseFloat(solarVoltageValue);
+    
+    if (!isNaN(numericSolarVoltage)) {
+        if (numericSolarVoltage < 10) {
+            dcSolarVoltageElement.classList.add("merah");
+            dcSolarVoltageElement.classList.remove("hijau");
+        } else {
+            dcSolarVoltageElement.classList.add("hijau");
+            dcSolarVoltageElement.classList.remove("merah");
+        }
+    }
+} else {
+    dcSolarVoltageElement.innerText = "N/A";
+    dcSolarVoltageElement.classList.remove("hijau", "merah");
+}
+
+
+        // ------------------------------------------------
+        // DC CHARGING CURRENT
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "solarcur")
+            );
+
+
+        document.getElementById(
+            "dcSolarCurr"
+        ).innerText =
+
+            snapshot.exists()
+            ? snapshot.val()
+            : "N/A";
+
+
+        // ------------------------------------------------
+        // CPU
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "cpu")
+            );
+
+
+        document.getElementById(
+            "cpuUsage"
+        ).innerText =
+
+            snapshot.exists()
+            ? snapshot.val()
+            : "--";
+
+
+        // ------------------------------------------------
+        // MEMORY
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "mem")
+            );
+
+
+        document.getElementById(
+            "memUsage"
+        ).innerText =
+
+            snapshot.exists()
+            ? snapshot.val()
+            : "--";
+
+
+        // ------------------------------------------------
+        // UPTIME
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "uptime")
+            );
+
+
+        document.getElementById(
+            "uptime"
+        ).innerText =
+
+            snapshot.exists()
+            ? snapshot.val()
+            : "--";
+
+
+        // ------------------------------------------------
+        // SOLAR HARVEST
+        // ------------------------------------------------
+
+        snapshot =
+            await get(
+                ref(db, "harvest")
+            );
+
+
+        const solarHarvest =
+            snapshot.exists()
+            ? Number(snapshot.val())
+            : NaN;
+
+
+        // Display harvested Wh
+
+        document.getElementById(
+            "solarHarvest"
+        ).textContent =
+
+            Number.isFinite(solarHarvest)
+
+            ? `${solarHarvest.toFixed(3)} Watt Hour`
+
+            : "N/A Watt Hour";
+
+
+        // ------------------------------------------------
+        // BATTERY CHARGE REMAINING TIME
+        // ------------------------------------------------
+
+        const batteryChargeTimeEl =
+            document.getElementById(
+                "batteryChargeTime"
+            );
+
+
+        if (
+            Number.isFinite(soc) &&
+            Number.isFinite(solarHarvest) &&
+            solarHarvest > 0
+        ) {
+
+
+// Current battery energy
+const currentBatteryWh = MAX_BATTERY_WH * (soc / MAX_USABLE_SOC);	    
+
+// ------------------------------------------------
+// BATTERY CAPACITY AND PUMP REMAINING DAYS
+// ------------------------------------------------
+
+
+
+const batteryCapacityEl =
+    document.getElementById("batteryCapacity");
+
+const batteryRemainingDaysEl =
+    document.getElementById("batteryRemainingDays");
+
+// Display current battery capacity
+batteryCapacityEl.innerText =
+    `Battery Capacity: ${currentBatteryWh.toFixed(1)} Wh`;
+
+// Calculate how many days the battery can run the pump
+const pumpRemainingDays =
+    currentBatteryWh / PUMP_DAILY_WH;
+
+// ------------------------------------------------
+// CALCULATE REMAINING WATER PRODUCTION
+// ------------------------------------------------
+
+const batteryWaterLitresEl =
+    document.getElementById("batteryWaterLitres");
+
+// Number of complete 20-minute pump runs available
+const pumpRunsRemaining =
+    currentBatteryWh / PUMP_DAILY_WH;
+
+// Each 20-minute run produces 600 litres
+const remainingWaterLitres =
+    pumpRunsRemaining *
+    PUMP_WATER_LITRES_PER_RUN;
+
+// Display remaining water production
+batteryWaterLitresEl.innerText =
+    `Water Production: ${Math.floor(remainingWaterLitres).toLocaleString()} litres`;
+
+// Same warning state as pump runtime
+batteryWaterLitresEl.classList.remove(
+    "green",
+    "red"
+);
+
+batteryWaterLitresEl.classList.add(
+    pumpRemainingDays <= 3
+        ? "red"
+        : "green"
+);
+
+// Display remaining pump days
+batteryRemainingDaysEl.innerText =
+    `Pump Runtime: ${pumpRemainingDays.toFixed(1)} days`;
+
+// ------------------------------------------------
+// COLOR WARNING
+// <= 3 days = RED
+// > 3 days = GREEN
+// ------------------------------------------------
+
+batteryRemainingDaysEl.classList.remove(
+    "green",
+    "red"
+);
+
+batteryRemainingDaysEl.classList.add(
+    pumpRemainingDays <= 3
+        ? "red"
+        : "green"
+);
+
+
+
+
+            // Energy still required
+
+            const remainingWh =
+                Math.max(
+                    0,
+                    MAX_BATTERY_WH -
+                    currentBatteryWh
+                );
+
+
+            // --------------------------------------------
+            // FULLY CHARGED
+            // --------------------------------------------
+
+            if (
+                remainingWh <= 0 ||
+                soc >= 	MAX_USABLE_SOC
+            ) {
+
+                batteryChargeTimeEl.innerText =
+                    "Fully Charged";
+
+
+                batteryChargeTimeEl.classList.remove(
+                    "green",
+                    "red"
+                );
+
+
+                batteryChargeTimeEl.classList.add(
+                    "green"
+                );
+
+            }
+
+
+            // --------------------------------------------
+            // STILL CHARGING
+            // --------------------------------------------
+
+            else {
+
+                const remainingDays =
+                    remainingWh /
+                    solarHarvest;
+
+
+                batteryChargeTimeEl.innerText =
+                    `${remainingDays.toFixed(2)} days`;
+
+
+                batteryChargeTimeEl.classList.remove(
+                    "green",
+                    "red"
+                );
+
+
+                batteryChargeTimeEl.classList.add(
+                    "green"
+                );
+
+            }
+
+        }
+
+
+        // ------------------------------------------------
+        // INVALID HARVEST
+        // ------------------------------------------------
+
+        else if (
+            Number.isFinite(soc) &&
+            soc >= 100
+        ) {
+
+            batteryChargeTimeEl.innerText =
+                "Fully Charged";
+
+
+            batteryChargeTimeEl.classList.remove(
+                "green",
+                "red"
+            );
+
+
+            batteryChargeTimeEl.classList.add(
+                "green"
+            );
+
+        }
+
+
+        else {
+
+            batteryChargeTimeEl.innerText =
+                "N/A";
+
+
+            batteryChargeTimeEl.classList.remove(
+                "green",
+                "red"
+            );
+
+        }
+
+    }
+
+    catch (err) {
+
+        console.error(
+            "Polling Error:",
+            err
+        );
+
+    }
+
+}
+
+
+// ----------------------------------------------------
+// AUTH STATE LISTENER
+// ----------------------------------------------------
+
+onAuthStateChanged(
+    auth,
+    (user) => {
+
+        if (user) {
+
+            // 🆕 CHANGED: Show phoneNumber instead of email
+            document.getElementById(
+                "status"
+            ).innerText =
+                "Logged in: " +
+                user.phoneNumber;
+
+            document.getElementById(
+                "loginBox"
+            ).style.display =
+                "none";
+
+            document.getElementById(
+                "dashboard"
+            ).style.display =
+                "block";
+
+            updateData();
+
+            if (!pollTimer) {
+
+                pollTimer =
+                    setInterval(
+                        updateData,
+                        2000
+                    );
+
+            }
+
+        }
+
+        else {
+
+            document.getElementById(
+                "status"
+            ).innerText =
+                "Not logged in";
+
+            document.getElementById(
+                "loginBox"
+            ).style.display =
+                "block";
+
+            // 🆕 ADDED: Reset the step screens back to the phone input step
+            document.getElementById(
+                "phoneStep"
+            ).style.display =
+                "block";
+
+            document.getElementById(
+                "verificationStep"
+            ).style.display =
+                "none";
+
+            // 🆕 ADDED: Clear out whatever text was left in the input boxes
+            document.getElementById(
+                "phoneNumber"
+            ).value = "";
+
+            document.getElementById(
+                "verificationCode"
+            ).value = "";
+
+
+            document.getElementById(
+                "dashboard"
+            ).style.display =
+                "none";
+
+
+            // Flush application session states
+
+            conversationHistory = [];
+
+            currentSessionUser = null;
+
+
+            if (pollTimer) {
+
+                clearInterval(
+                    pollTimer
+                );
+
+                pollTimer = null;
+
+            }
+
+
+            // Stop Firebase harvest listener
+
+            if (stopHarvestChart) {
+
+                stopHarvestChart();
+
+                stopHarvestChart = null;
+
+            }
+
+
+            activeHistoryDate = "";
+
+
+            // Destroy Chart.js chart
+
+            if (harvestChart) {
+
+                harvestChart.destroy();
+
+                harvestChart = null;
+
+            }
+
+        }
+
+    }
+);
+
+
+
+</script>
+
+</body>
+</html>
+

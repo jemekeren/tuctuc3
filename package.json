@@ -1,3 +1,10 @@
 {
-  "type": "module"
+  "dependencies": {
+    "firebase-admin": "^14.0.0"
+  },
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "4.15.9"
+    }
+  }
 }
