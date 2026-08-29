@@ -712,31 +712,14 @@ margin: 0 15px;
 
 <div class="main">
 
-        <div id="loginBox" class="card">
-            <h3 id="formTitle">Login</h3>
-            
-            <!-- STEP 1: Enter Phone Number (Visible by default) -->
-            <div id="phoneStep">
-                <label for="phoneNumber">Phone Number:</label>
-                <!-- Important: Use E.164 format, e.g., +12345678901 -->
-                <input id="phoneNumber" type="tel" placeholder="+12345678901"><br>
-                
-                <!-- REQUIRED: Empty container where Firebase attaches hidden security checks -->
-                <div id="recaptcha-container"></div>
-                
-                <button id="sendCodeBtn">Send Verification Code</button>
-            </div>
+<div id="loginBox" class="card">
 
-            <!-- STEP 2: Enter SMS OTP Code (Hidden by default) -->
-            <div id="verificationStep" style="display: none;">
-                <label for="verificationCode">6-Digit Verification Code:</label>
-                <input id="verificationCode" type="text" placeholder="123456" maxlength="6"><br>
-                <button id="loginBtn">Verify & Login</button>
-            </div>
+<h3>Login</h3>
 
-            <!-- STEP 3: Logout Action (Hidden by default) -->
-            <!-- <button id="logoutBtn" style="display: none;">Logout</button> -->
-        </div>
+<input id="email" type="email" placeholder="Email"><br>
+<input id="password" type="password" placeholder="Password"><br>
+
+<button id="loginBtn">Login</button>
 
 </div>
 
@@ -1109,8 +1092,7 @@ from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 
 import {
     getAuth,
-    RecaptchaVerifier, 
-    signInWithPhoneNumber, 
+    signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged
 }
@@ -1153,68 +1135,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 const db = getDatabase(app);
-
-// Global variable to temporarily hold the SMS session data
-let confirmationResult = null;
-
-
-
-window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'invisible',
-    'callback': (response) => {
-        // reCAPTCHA resolved
-    }
-});
-
-
-document.getElementById("sendCodeBtn").addEventListener("click", async () => {
-    const phoneNumber = document.getElementById("phoneNumber").value;
-    const status = document.getElementById("status");
-    const appVerifier = window.recaptchaVerifier;
-
-    if (!phoneNumber) {
-        status.textContent = "Please enter a valid phone number.";
-        return;
-    }
-
-    try {
-        status.textContent = "Sending SMS code...";
-        // Request SMS delivery from Firebase
-        confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-        
-        status.textContent = "SMS code sent! Check your phone.";
-        // Toggle view panels
-        document.getElementById("phoneStep").style.display = "none";
-        document.getElementById("verificationStep").style.display = "block";
-    } catch (err) {
-        status.textContent = "Error sending SMS: " + err.message;
-        console.error(err);
-    }
-});
-
-document.getElementById("loginBtn").addEventListener("click", async () => {
-    const code = document.getElementById("verificationCode").value;
-    const status = document.getElementById("status");
-
-    if (!code) {
-        status.textContent = "Please enter the 6-digit code.";
-        return;
-    }
-
-    try {
-        status.textContent = "Verifying...";
-        // Confirm the verification token matches the session code
-        const result = await confirmationResult.confirm(code);
-        const user = result.user;
-        
-        status.textContent = `Logged in as: ${user.phoneNumber}`;
-    } catch (err) {
-        status.textContent = "Invalid code. Please try again.";
-        console.error(err);
-    }
-});
-
-
 
 
 // ----------------------------------------------------
@@ -1974,16 +1894,16 @@ document
 // LOGOUT
 // ----------------------------------------------------
 
-        document.getElementById("logoutBtn").addEventListener("click", async () => {
-            try {
-                await signOut(auth);
-            } catch (err) {
-                alert("Error during session logout: " + err.message);
-            }
-        });
+document
+    .getElementById("logoutBtn")
+    .addEventListener("click", async () => {
+
+        await signOut(auth);
+
+    });
 
 
-// ----------------------------
+// ----------------------------------------------------
 // MANUAL RELAY CONTROL
 // ----------------------------------------------------
 
@@ -2713,24 +2633,28 @@ onAuthStateChanged(
 
         if (user) {
 
-            // 🆕 CHANGED: Show phoneNumber instead of email
+
             document.getElementById(
                 "status"
             ).innerText =
                 "Logged in: " +
-                user.phoneNumber;
+                user.email;
+
 
             document.getElementById(
                 "loginBox"
             ).style.display =
                 "none";
 
+
             document.getElementById(
                 "dashboard"
             ).style.display =
                 "block";
 
+
             updateData();
+
 
             if (!pollTimer) {
 
@@ -2746,35 +2670,17 @@ onAuthStateChanged(
 
         else {
 
+
             document.getElementById(
                 "status"
             ).innerText =
                 "Not logged in";
 
+
             document.getElementById(
                 "loginBox"
             ).style.display =
                 "block";
-
-            // 🆕 ADDED: Reset the step screens back to the phone input step
-            document.getElementById(
-                "phoneStep"
-            ).style.display =
-                "block";
-
-            document.getElementById(
-                "verificationStep"
-            ).style.display =
-                "none";
-
-            // 🆕 ADDED: Clear out whatever text was left in the input boxes
-            document.getElementById(
-                "phoneNumber"
-            ).value = "";
-
-            document.getElementById(
-                "verificationCode"
-            ).value = "";
 
 
             document.getElementById(
@@ -2829,8 +2735,6 @@ onAuthStateChanged(
 
     }
 );
-
-
 
 </script>
 

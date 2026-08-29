@@ -711,33 +711,17 @@ margin: 0 15px;
 <p id="status">Not logged in</p>
 
 <div class="main">
-
-        <div id="loginBox" class="card">
-            <h3 id="formTitle">Login</h3>
-            
-            <!-- STEP 1: Enter Phone Number (Visible by default) -->
-            <div id="phoneStep">
-                <label for="phoneNumber">Phone Number:</label>
-                <!-- Important: Use E.164 format, e.g., +12345678901 -->
-                <input id="phoneNumber" type="tel" placeholder="+12345678901"><br>
-                
-                <!-- REQUIRED: Empty container where Firebase attaches hidden security checks -->
-                <div id="recaptcha-container"></div>
-                
-                <button id="sendCodeBtn">Send Verification Code</button>
-            </div>
-
-            <!-- STEP 2: Enter SMS OTP Code (Hidden by default) -->
-            <div id="verificationStep" style="display: none;">
-                <label for="verificationCode">6-Digit Verification Code:</label>
-                <input id="verificationCode" type="text" placeholder="123456" maxlength="6"><br>
-                <button id="loginBtn">Verify & Login</button>
-            </div>
-
-            <!-- STEP 3: Logout Action (Hidden by default) -->
-            <!-- <button id="logoutBtn" style="display: none;">Logout</button> -->
+    <div id="loginBox" class="card">
+        <h3 id="formTitle">Login</h3>
+        
+        <!-- Google Sign-In Button Component -->
+        <div id="googleStep">
+            <p>Access your solar dashboard securely using your Google Account.</p>
+            <button id="googleLoginBtn" class="google-btn">
+                <img> Sign In with Google
+            </button>
         </div>
-
+    </div>
 </div>
 
 <div id="dashboard" style="display:none;">
@@ -1109,8 +1093,8 @@ from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 
 import {
     getAuth,
-    RecaptchaVerifier, 
-    signInWithPhoneNumber, 
+    GoogleAuthProvider, 
+    signInWithPopup,
     signOut,
     onAuthStateChanged
 }
@@ -1154,65 +1138,12 @@ const auth = getAuth(app);
 
 const db = getDatabase(app);
 
-// Global variable to temporarily hold the SMS session data
-let confirmationResult = null;
+
+// Initialize the Google Provider instance
+const provider = new GoogleAuthProvider();
 
 
 
-window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'invisible',
-    'callback': (response) => {
-        // reCAPTCHA resolved
-    }
-});
-
-
-document.getElementById("sendCodeBtn").addEventListener("click", async () => {
-    const phoneNumber = document.getElementById("phoneNumber").value;
-    const status = document.getElementById("status");
-    const appVerifier = window.recaptchaVerifier;
-
-    if (!phoneNumber) {
-        status.textContent = "Please enter a valid phone number.";
-        return;
-    }
-
-    try {
-        status.textContent = "Sending SMS code...";
-        // Request SMS delivery from Firebase
-        confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-        
-        status.textContent = "SMS code sent! Check your phone.";
-        // Toggle view panels
-        document.getElementById("phoneStep").style.display = "none";
-        document.getElementById("verificationStep").style.display = "block";
-    } catch (err) {
-        status.textContent = "Error sending SMS: " + err.message;
-        console.error(err);
-    }
-});
-
-document.getElementById("loginBtn").addEventListener("click", async () => {
-    const code = document.getElementById("verificationCode").value;
-    const status = document.getElementById("status");
-
-    if (!code) {
-        status.textContent = "Please enter the 6-digit code.";
-        return;
-    }
-
-    try {
-        status.textContent = "Verifying...";
-        // Confirm the verification token matches the session code
-        const result = await confirmationResult.confirm(code);
-        const user = result.user;
-        
-        status.textContent = `Logged in as: ${user.phoneNumber}`;
-    } catch (err) {
-        status.textContent = "Invalid code. Please try again.";
-        console.error(err);
-    }
-});
 
 
 
@@ -1939,35 +1870,21 @@ async function askHF(
 // LOGIN
 // ----------------------------------------------------
 
-document
-    .getElementById("loginBtn")
-    .addEventListener("click", async () => {
-
-        const email =
-            document.getElementById("email").value;
-
-
-        const password =
-            document.getElementById("password").value;
-
-
-        try {
-
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-        }
-
-        catch(err) {
-
-            alert(err.message);
-
-        }
-
+document.getElementById("googleLoginBtn").addEventListener("click", () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      // This implicitly fetches Token 2 and converts it to Firebase's Token 1
+      const user = result.user;
+      console.log("Successfully logged in:", user.uid);
+      
+      // Update UI displays natively
+      document.getElementById("loginStep").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+    })
+    .catch((error) => {
+      console.error("Authentication failed:", error.message);
     });
+});
 
 
 // ----------------------------------------------------
@@ -2711,76 +2628,24 @@ onAuthStateChanged(
     auth,
     (user) => {
 
-        if (user) {
+    if (user) {
+        // Display email or profile display name from Google metadata
+        document.getElementById("status").innerText = 
+            "Logged in: " + (user.displayName || user.email);
 
-            // 🆕 CHANGED: Show phoneNumber instead of email
-            document.getElementById(
-                "status"
-            ).innerText =
-                "Logged in: " +
-                user.phoneNumber;
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
 
-            document.getElementById(
-                "loginBox"
-            ).style.display =
-                "none";
+        updateData();
 
-            document.getElementById(
-                "dashboard"
-            ).style.display =
-                "block";
-
-            updateData();
-
-            if (!pollTimer) {
-
-                pollTimer =
-                    setInterval(
-                        updateData,
-                        2000
-                    );
-
-            }
-
+        if (!pollTimer) {
+            pollTimer = setInterval(updateData, 2000);
         }
 
-        else {
-
-            document.getElementById(
-                "status"
-            ).innerText =
-                "Not logged in";
-
-            document.getElementById(
-                "loginBox"
-            ).style.display =
-                "block";
-
-            // 🆕 ADDED: Reset the step screens back to the phone input step
-            document.getElementById(
-                "phoneStep"
-            ).style.display =
-                "block";
-
-            document.getElementById(
-                "verificationStep"
-            ).style.display =
-                "none";
-
-            // 🆕 ADDED: Clear out whatever text was left in the input boxes
-            document.getElementById(
-                "phoneNumber"
-            ).value = "";
-
-            document.getElementById(
-                "verificationCode"
-            ).value = "";
-
-
-            document.getElementById(
-                "dashboard"
-            ).style.display =
-                "none";
+    } else {
+        document.getElementById("status").innerText = "Not logged in";
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("dashboard").style.display = "none";
 
 
             // Flush application session states
